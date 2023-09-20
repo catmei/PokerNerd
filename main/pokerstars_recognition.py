@@ -123,16 +123,16 @@ class PokerStarsTableRecognizer(PokerTableRecognizer):
         bet_img = img[max_loc[1] - 3:max_loc[1] + self.cfg['pot']['height'],
                       max_loc[0] + self.cfg['pot']['pot_template_width']:
                       max_loc[0] + self.cfg['pot']['pot_template_width'] + self.cfg['pot']['width']]
-        binary_img = thresholding(bet_img, 140, 255)
+        binary_img = thresholding(bet_img, self.cfg['pot']['value_1'], self.cfg['pot']['value_2'])
         contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        bounding_boxes = convert_contours_to_bboxes(contours, 10, 1)
+        bounding_boxes = convert_contours_to_bboxes(contours, self.cfg['pot']['min_height'], self.cfg['pot']['min_width'])
         bounding_boxes = sort_bboxes(bounding_boxes, method='left-to-right')
         number = ''
         for bbox in bounding_boxes:
             number_img = bet_img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
             symbol = table_part_recognition(number_img, self.cfg['paths']['pot_numbers'], cv2.IMREAD_GRAYSCALE)
             number += symbol
-        return number
+        return number, len(bounding_boxes)
 
     def get_dealer_button_position(self):
         """

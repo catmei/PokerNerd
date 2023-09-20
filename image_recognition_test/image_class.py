@@ -14,8 +14,11 @@ class ImageTest:
                            self.cfg['hero_step_define']['x_0']:self.cfg['hero_step_define']['x_1']]
 
         hsv_img = cv2.cvtColor(res_img, cv2.COLOR_BGR2HSV_FULL)
+        self.show_image(hsv_img)
         mask = cv2.inRange(hsv_img, np.array([0, 5, 50]), np.array([179, 10, 255]))
+        self.show_image(mask)
         count_of_white_pixels = cv2.countNonZero(mask)
+        print(f'count_of_white_pixels: {count_of_white_pixels}')
 
         return True if count_of_white_pixels > self.cfg['hero_step_define']['min_white_pixels'] else False
 
@@ -45,6 +48,7 @@ class ImageTest:
         # bboxes width have to > 10 and height > 30
         bounding_boxes = convert_contours_to_bboxes(contours, 20, 4)
         bounding_boxes = sort_bboxes(bounding_boxes, method=sort_bboxes_method)
+        self.show_image_with_boxes(img, bounding_boxes)
         cards_bboxes_dct = card_separator(bounding_boxes, separators)
         print(cards_bboxes_dct)
         for _, cards_bboxes in cards_bboxes_dct.items():
@@ -115,7 +119,7 @@ class ImageTest:
         bet_img = img[max_loc[1] - 3:max_loc[1] + self.cfg['pot']['height'],
                       max_loc[0] + self.cfg['pot']['pot_template_width']:
                       max_loc[0] + self.cfg['pot']['pot_template_width'] + self.cfg['pot']['width']]
-        binary_img = thresholding(bet_img, 130, 255)
+        binary_img = thresholding(bet_img, self.cfg['pot']['value_1'], self.cfg['pot']['value_2'])
         self.show_image(binary_img, zoom_in=True)
 
         # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
@@ -125,7 +129,7 @@ class ImageTest:
         contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         self.show_image_with_contours(bet_img, contours)
 
-        bounding_boxes = convert_contours_to_bboxes(contours, 10, 1)
+        bounding_boxes = convert_contours_to_bboxes(contours, self.cfg['pot']['min_height'], self.cfg['pot']['min_width'])
         print(f"boxes count: {len(bounding_boxes)}")
         self.show_image_with_boxes(bet_img, bounding_boxes)
 
@@ -138,30 +142,80 @@ class ImageTest:
             number += symbol
         return number
 
-    def recognize_pot(self, bet_img):
-        binary_img = thresholding(bet_img, 105, 255)
-        self.show_image(binary_img, zoom_in=True)
+    def get_dealer_button_position(self):
+        """
+        determine who is closer to the dealer button
+        Returns:
+            player_info(dict): here is information about all players as it becomes available
+        """
+        player_info = {key: value for key in range(1, 7) for value in ['']}
+        players_coordinates = self.cfg['player_center_coordinates']
+        _, button_coordinates = find_by_template(self.img, self.cfg['paths']['dealer_button'])
+        player_with_button = find_closer_point(players_coordinates, button_coordinates)
+        player_info[player_with_button] = 'dealer_button'
+        return player_info
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-        eroded = cv2.erode(binary_img, kernel, iterations=1)
-        self.show_image(eroded, zoom_in=True)
+    def get_missing_players(self, players_info, path_to_template_img, flag):
+        """
+        find players who are currently absent for various reasons
+        Parameters:
+            players_info(dict): key - player number, value - '' - if the player is in the game;
+            '-' - if a player's seat is available; '-so-' - if the player is absent
+            path_to_template_img(str): the path to the images where the benchmark images are located
+            flag(str): It can be - and -so-
+        Returns:
+           players_info(dict): info about players
+        """
+        players_coordinates = self.cfg['players_coordinates']
+        players_for_checking = [key for key, value in players_info.items() if value == '']
+        for player, bbox in players_coordinates.items():
+            if player != 1 and player in players_for_checking:
+                player_img = self.img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                max_val, _ = find_by_template(player_img, self.cfg['paths'][path_to_template_img])
 
-        contours, _ = cv2.findContours(eroded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        self.show_image_with_contours(bet_img, contours)
+                print(f'player: {player}, max_val: {max_val}')
+                if max_val > 0.8:
+                    players_info[player] = flag
+        return players_info
 
-        bounding_boxes = convert_contours_to_bboxes(contours, 10, 1)
-        print(f"boxes count: {len(bounding_boxes)}")
-        self.show_image_with_boxes(bet_img, bounding_boxes)
+    def get_empty_seats(self, players_info):
+        """
+        find players whose places are currently vacant
+        """
+        path_to_template_img = 'empty_seat'
+        flag = '-'
+        players_info = self.get_missing_players(players_info, path_to_template_img, flag)
+        return players_info
 
-        bounding_boxes = sort_bboxes(bounding_boxes, method='left-to-right')
+    def get_so_players(self, players_info):
+        """
+        find players who are not currently in the game
+        """
+        path_to_template_img = 'sitting_out'
+        flag = '-so-'
+        players_info = self.get_missing_players(players_info, path_to_template_img, flag)
+        return players_info
 
-        number = ''
-        for bbox in bounding_boxes:
-            number_img = bet_img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
-            symbol = table_part_recognition(number_img, self.cfg['paths']['pot_numbers'], cv2.IMREAD_GRAYSCALE)
-            number += symbol
-        return number
-
+    def assign_positions(self, players_info):
+        """
+        assign each player one of six positions if the player in the game
+        Parameters:
+            players_info(dict): info about players in {1:'', 2: 'dealer_button',3:'-so-' etc. } format
+        Returns:
+            players_info(dict): info about players in {1: 'BB', 2: 'SB', 3: '-so-' etc. } format
+        """
+        busy_seats = [k for k, v in players_info.items() if v != '-' and v != '-so-']
+        exist_positions = ['BTN', 'SB', 'BB', 'UTG', 'MP', 'CO']
+        del exist_positions[3:3 + (6 - len(busy_seats))]
+        player_with_button = [k for k, v in players_info.items() if v == 'dealer_button'][0]
+        for index, player_number in enumerate(
+                busy_seats[busy_seats.index(player_with_button):] + busy_seats[:busy_seats.index(player_with_button)]):
+            if len(busy_seats) == 2:
+                position = 'SB' if index == 0 else 'BB'
+                players_info[player_number] = position
+            else:
+                players_info[player_number] = exist_positions[index]
+        return players_info
 
     def show_image_with_contours(self, img, contours):
         img_with_contours = cv2.drawContours(img.copy(), contours, -1, (255, 0, 0), 1)
@@ -230,9 +284,13 @@ class ImageTools:
         hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV_FULL)
         self.show_image(hsv_img)
 
-    def get_image_range(self, save=False):
+    def get_image_range(self, save=False, resize=1):
         # Let the user manually select the ROI
-        r = cv2.selectROI(self.img)
+        new_width = int(self.img.shape[1]*resize)
+        new_height = int(self.img.shape[0]*resize)
+        resized_img = cv2.resize(self.img.copy(), (new_width, new_height))
+
+        r = cv2.selectROI(resized_img)
 
         # Print the selected region's coordinates and dimensions
         print(f"X Range: {r[0]} to {r[0] + r[2]}")
@@ -241,7 +299,8 @@ class ImageTools:
         cv2.destroyAllWindows()
 
         if save:
-            cv2.imwrite('pot.png', self.img[r[1]: r[1] + r[3], r[0]: r[0] + r[2]])
+            filename = input("Enter the file name") + '.png'
+            cv2.imwrite(filename, resized_img[r[1]: r[1] + r[3], r[0]: r[0] + r[2]])
 
     def show_roi(self, y0, y1, x0, x1):
         ROI = self.img[y0:y1, x0:x1]

@@ -7,7 +7,7 @@ from image_class import ImageTools
 
 
 def get_screenshot(name, interval=0.5):
-    for i in range(10):
+    for i in range(100):
         window = pygetwindow.getWindowsWithTitle("No Limit Hold'em")[0]
         screenshot = pyautogui.screenshot(region=(window.left, window.top, window.width, window.height))
         screenshot.save(f'{name}_{i}.png')
@@ -26,12 +26,13 @@ if __name__ == "__main__":
     #     config = yaml.safe_load(stream)
 
     # # get my turn and not my turn screenshot
-    resize_window("Hold'em", 2000, 1200)
-    get_screenshot("pot_example", interval=1)
-    exit()
+    # resize_window("Hold'em", 2000, 1200)
+    # get_screenshot("pot_example", interval=1)
+    # exit()
 
     # Initialize
-    image = cv2.imread('images_for_test/screenshot_hero_cards.png')
+    path = r'sitting_out.png'
+    image = cv2.imread(path)
     image_tool = ImageTools(image)
     image_tool.show_image()
 
@@ -42,10 +43,10 @@ if __name__ == "__main__":
     # hsv = image_tool.show_hsv()
 
     # get x0~x1 and y0~y1
-    # image_tool.get_image_range()
+    image_tool.get_image_range(resize=1)
 
     # save ROI
-    # image_tool.get_image_range(save=True)
+    # image_tool.get_image_range(save=True, resize=1)
 
     # # show ROI
     # table_cards = config['table_cards']
