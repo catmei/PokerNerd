@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 from main.utils import sort_bboxes, thresholding, card_separator, table_part_recognition, convert_contours_to_bboxes, find_by_template, find_closer_point
 
 
@@ -9,7 +10,6 @@ class ImageTest:
         self.cfg = cfg
 
     def is_main_player_turn(self):
-        # image [y0: y1, x0: x1]
         res_img = self.img[self.cfg['hero_step_define']['y_0']:self.cfg['hero_step_define']['y_1'],
                            self.cfg['hero_step_define']['x_0']:self.cfg['hero_step_define']['x_1']]
 
@@ -21,6 +21,66 @@ class ImageTest:
         print(f'count_of_white_pixels: {count_of_white_pixels}')
 
         return True if count_of_white_pixels > self.cfg['hero_step_define']['min_white_pixels'] else False
+
+    def detect_players_turn(self):
+        players_info = {key: value for key in range(1, 7) for value in ['']}
+        print(players_info)
+        players_coordinates = self.cfg['players_coordinates']
+        players_for_checking = [key for key, value in players_info.items() if value == '']
+        for player, bbox in players_coordinates.items():
+            if player in players_for_checking:
+                print(player)
+                turn_img = self.img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                hsv_img = cv2.cvtColor(turn_img, cv2.COLOR_BGR2HSV_FULL)
+                self.show_image(hsv_img)
+                mask = cv2.inRange(hsv_img, np.array([0, 5, 50]), np.array([179, 10, 255]))
+                self.show_image(mask)
+                count_of_white_pixels = cv2.countNonZero(mask)
+                print(f'count_of_white_pixels: {count_of_white_pixels}')
+
+                if count_of_white_pixels > self.cfg['hero_step_define']['min_white_pixels']:
+                    players_info[player] = 'turn'
+        return player
+
+    def detect_players_turn_(self):
+        players_info = {key: value for key in range(1, 7) for value in ['']}
+        print(players_info)
+        players_btm_contour = self.cfg['players_btm_contour']
+        players_for_checking = [key for key, value in players_info.items() if value == '']
+        for player, bbox in players_btm_contour.items():
+            if player in players_for_checking:
+                res_img = self.img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                binary_img = thresholding(res_img, 200, 255)
+                self.show_image(binary_img)
+                count_of_white_pixels = cv2.countNonZero(binary_img)
+                print(f'turn {player}, count_of_white_pixels: {count_of_white_pixels}')
+                if count_of_white_pixels > self.cfg['limit']['btm_contour_min_white']:
+                    return player
+        return None
+
+    def detect_action(self, player):
+        players_coordinates = self.cfg['players_coordinates']
+        bbox = players_coordinates[player]
+        res_img = self.img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+
+        dir = self.cfg['paths']['player_action']
+        all_files_and_directories = os.listdir(dir)
+        # action_dict = {key: 0 for key in all_files_and_directories}
+
+        for image_name in all_files_and_directories:
+            img_path = os.path.join(dir, image_name)
+            template_img_gray = cv2.imread(img_path, 0)
+            self.show_image(template_img_gray)
+            img_gray = cv2.cvtColor(res_img, cv2.COLOR_BGR2GRAY)
+            self.show_image(img_gray)
+            result = cv2.matchTemplate(img_gray, template_img_gray,
+                                       cv2.TM_CCOEFF_NORMED)
+            (min_val, max_val, min_loc, max_loc) = cv2.minMaxLoc(result)
+            # action_dict[image_name] = max_val
+            if max_val > 0.95:
+                action = image_name.split('.')[0]
+                return action
+        return None
 
     def detect_cards(self, separators, sort_bboxes_method, cards_coordinates, path_to_numbers, path_to_suits):
         """
@@ -173,7 +233,7 @@ class ImageTest:
                 player_img = self.img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
                 max_val, _ = find_by_template(player_img, self.cfg['paths'][path_to_template_img])
 
-                print(f'player: {player}, max_val: {max_val}')
+                # print(f'player: {player}, max_val: {max_val}')
                 if max_val > 0.8:
                     players_info[player] = flag
         return players_info
@@ -217,6 +277,89 @@ class ImageTest:
                 players_info[player_number] = exist_positions[index]
         return players_info
 
+    def find_players_bet(self, players_info):
+        """
+        Parameters:
+            players_info(dict): info about players in {1:'BTN', 2:'SB', 3:'BB' etc. } format
+        Returns:
+            updated_players_info(dict): info about players in {'Hero':'BTN', 'SB':'', 'BB':'50' etc. } format
+        """
+        players_bet_location = self.cfg['players_bet']
+        updated_players_info = {'Hero': players_info[1]}
+        for i, location_coordinates in players_bet_location.items():
+            if players_info[i] not in ('-so-', '-'):
+                bet_img = self.img[location_coordinates[1]:location_coordinates[3],
+                          location_coordinates[0]:location_coordinates[2]]
+                self.show_image(bet_img)
+                binary_img = thresholding(bet_img, self.cfg['pot']['value_1'], self.cfg['pot']['value_2'])
+                self.show_image(binary_img)
+                contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                self.show_image_with_contours(bet_img, contours)
+                bounding_boxes = convert_contours_to_bboxes(contours, self.cfg['pot']['min_height'], self.cfg['pot']['min_width'])
+                bounding_boxes = sort_bboxes(bounding_boxes, method='left-to-right')
+                self.show_image_with_boxes(bet_img, bounding_boxes)
+                number = ''
+                for bbox in bounding_boxes:
+                    number_img = bet_img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                    symbol = table_part_recognition(number_img, self.cfg['paths']['pot_numbers'], cv2.IMREAD_GRAYSCALE)
+                    number += symbol
+                updated_players_info[players_info[i]] = number
+            else:
+                updated_players_info[i] = players_info[i]
+        return updated_players_info
+
+    def find_players_bet_(self, players_info):
+        """
+        Parameters:
+            players_info(dict): info about players in {1:'BTN', 2:'SB', 3:'BB' etc. } format
+        Returns:
+            updated_players_info(dict): info about players in {'Hero':'BTN', 'SB':'', 'BB':'50' etc. } format
+        """
+        players_bet_location = self.cfg['players_bet_']
+        # print(players_bet_location)
+        players_bet = players_info
+        for i, location_coordinates in players_bet_location.items():
+            if players_info[i] not in ('-so-', '-'):
+                bet_img = self.img[location_coordinates[1]:location_coordinates[3],
+                          location_coordinates[0]:location_coordinates[2]]
+                # self.show_image(bet_img)
+                binary_img = thresholding(bet_img, self.cfg['pot']['value_1'], self.cfg['pot']['value_2'])
+                # self.show_image(binary_img)
+                contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                # self.show_image_with_contours(bet_img, contours)
+                bounding_boxes = convert_contours_to_bboxes(contours, self.cfg['pot']['min_height'], self.cfg['pot']['min_width'])
+                bounding_boxes = sort_bboxes(bounding_boxes, method='left-to-right')
+                # self.show_image_with_boxes(bet_img, bounding_boxes)
+                number = ''
+                for bbox in bounding_boxes:
+                    number_img = bet_img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                    symbol = table_part_recognition(number_img, self.cfg['paths']['pot_numbers'], cv2.IMREAD_GRAYSCALE)
+                    number += symbol
+                players_bet[i] = number
+            else:
+                players_bet[i] = players_info[i]
+        return players_bet
+
+    def find_player_bet(self, player):
+        player_bet_location = self.cfg['players_bet_'][player]
+        bet_img = self.img[player_bet_location[1]: player_bet_location[3],
+                  player_bet_location[0]: player_bet_location[2]]
+        binary_img = thresholding(bet_img, self.cfg['pot']['value_1'], self.cfg['pot']['value_2'])
+        contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        bounding_boxes = convert_contours_to_bboxes(contours, self.cfg['pot']['min_height'],
+                                                    self.cfg['pot']['min_width'])
+        bounding_boxes = sort_bboxes(bounding_boxes, method='left-to-right')
+        number = ''
+        for bbox in bounding_boxes:
+            number_img = bet_img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+            symbol = table_part_recognition(number_img, self.cfg['paths']['pot_numbers'], cv2.IMREAD_GRAYSCALE)
+            number += symbol
+        if len(number) > 0:
+            return number
+        if len(number) == 0:
+            return None
+
+
     def show_image_with_contours(self, img, contours):
         img_with_contours = cv2.drawContours(img.copy(), contours, -1, (255, 0, 0), 1)
         self.show_image(img_with_contours, zoom_in=True)
@@ -246,7 +389,6 @@ class ImageTest:
         cv2.imshow('Image', img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-
 
 
 class ImageTools:

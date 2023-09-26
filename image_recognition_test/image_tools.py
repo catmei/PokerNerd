@@ -25,13 +25,13 @@ if __name__ == "__main__":
     # with open(filename, 'r') as stream:
     #     config = yaml.safe_load(stream)
 
-    # # get my turn and not my turn screenshot
+    # get my turn and not my turn screenshot
     # resize_window("Hold'em", 2000, 1200)
     # get_screenshot("pot_example", interval=1)
     # exit()
 
     # Initialize
-    path = r'sitting_out.png'
+    path = r'C:\Users\b0220\Documents\data_engineering\PokerNerd\main\images\game2\screenshot_315.png'
     image = cv2.imread(path)
     image_tool = ImageTools(image)
     image_tool.show_image()
@@ -43,10 +43,10 @@ if __name__ == "__main__":
     # hsv = image_tool.show_hsv()
 
     # get x0~x1 and y0~y1
-    image_tool.get_image_range(resize=1)
+    # image_tool.get_image_range(resize=1)
 
     # save ROI
-    # image_tool.get_image_range(save=True, resize=1)
+    image_tool.get_image_range(save=True, resize=1)
 
     # # show ROI
     # table_cards = config['table_cards']
@@ -59,3 +59,4 @@ if __name__ == "__main__":
     #     else:
     #         image_tool.show_roi(table_cards['y_0'], table_cards['y_1'], table_cards['x_0'] + table_cards[f'separator_{i-1}'], table_cards['x_0']+table_cards[f'separator_{i}'])
 
+    # image_tool.get_image_range(resize=1)
