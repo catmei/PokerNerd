@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PokerNerd</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script type="text/javascript">
+        const url =  'http://127.0.0.1:9000'
+        const socket = io.connect(url);
+
+        socket.on('update_strategy', function(data) {
+            document.getElementById('equity').innerText = "Equity: " + data.equity;
+            document.getElementById('action').innerText = "Action: " + data.action;
+            document.getElementById('amount').innerText = "Amount: " + data.amount;
+            document.getElementById('analysis').innerText = "Analysis: " + data.analysis
+
+        });
+
+    </script>
+</head>
+<body>
+
+<p id="equity">Equity: </p>
+<p id="action">Action: </p>
+<p id="amount">Amount: </p>
+<p id="analysis">Analysis: </p>
+
+
+
+
+</body>
+</html>

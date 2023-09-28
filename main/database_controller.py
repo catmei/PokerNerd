@@ -1,10 +1,32 @@
 import pandas as pd
 import os
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, distinct, Column, Integer, String, JSON, FLOAT
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 load_dotenv()
+
+Base = declarative_base()
+
+
+# Define the table structure as a class
+class History(Base):
+    __tablename__ = 'history'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    game_id = Column(String(45))
+    round = Column(String(45))
+    player = Column(String(45))
+    position = Column(String(45))
+    action = Column(String(45))
+    number = Column(Integer)
+    stack_before = Column(Integer)
+    stack_after = Column(Integer)
+    pot_before = Column(Integer)
+    pot_after = Column(Integer)
+    my_cards = Column(JSON)
+    table_cards = Column(JSON)
+    equity = Column(FLOAT)
 
 
 class PokerDB:
@@ -33,6 +55,17 @@ class PokerDB:
         df.to_sql(table_name, con=self.engine, if_exists='append', index=False)
         self.session.commit()
 
+    def fetch_game_id(self):
+        distinct_game_ids = self.session.query(distinct(History.game_id)).all()
+        game_ids = [item[0] for item in distinct_game_ids]
+        return game_ids
+
+    def fetch_history_by_game_id(self, game_id):
+        history = self.session.query(History).filter(History.game_id == game_id)
+        # Convert the query results to a DataFrame
+        df_history = pd.read_sql(history.statement, self.session.bind)
+        return df_history
+
 
 if __name__ == '__main__':
     poker_db = PokerDB()
@@ -43,7 +76,9 @@ if __name__ == '__main__':
     })
 
     poker_db.build_connection()
-    poker_db.append_df(df=df, table_name='test')
+    # poker_db.append_df(df=df, table_name='test')
+    # poker_db.fetch_game_id()
+    poker_db.fetch_history_by_game_id(game_id=1695736821)
     poker_db.close_connection()
 
 
