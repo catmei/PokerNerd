@@ -43,7 +43,7 @@ class PokerDB:
 
     def build_connection(self):
         # Create an engine
-        self.engine = create_engine(f"mysql+mysqldb://{self.USERNAME}:{self.PASSWORD}@{self.ENDPOINT}:{self.PORT}/{self.DATABASE}")
+        self.engine = create_engine(f"mysql+pymysql://{self.USERNAME}:{self.PASSWORD}@{self.ENDPOINT}:{self.PORT}/{self.DATABASE}")
         # Create a session
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
@@ -78,7 +78,8 @@ if __name__ == '__main__':
     poker_db.build_connection()
     # poker_db.append_df(df=df, table_name='test')
     # poker_db.fetch_game_id()
-    poker_db.fetch_history_by_game_id(game_id=1695736821)
+    data = poker_db.fetch_history_by_game_id(game_id=1695736821)
     poker_db.close_connection()
 
+    print(data)
 
