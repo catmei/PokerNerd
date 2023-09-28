@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PokerNerd</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // Fetch game IDs on document ready
+            $.ajax({
+                type: "GET",
+                url: "/game_ids",
+                dataType: "json",
+                success: function(data) {
+                    // Assuming the API returns a list of game IDs
+                    let gameIdsHTML = '<select id="gameIdSelect">';
+                    gameIdsHTML += '<option value="None">select game id</option>';  // Default option
+                    data.forEach(gameId => {
+                        gameIdsHTML += `<option value="${gameId}">${gameId}</option>`;
+                    });
+                    gameIdsHTML += '</select>';
+                    $("#gameIdsContainer").html(gameIdsHTML);
+                },
+                error: function(error) {
+                    $("#gameIdsContainer").html("<p>Error fetching game IDs.</p>");
+                }
+            });
+        });
+
+        // Fetch hand history when a game ID is selected
+        function show_history(game_id) {
+            $.ajax({
+                type: "GET",
+                url: `/history_data?game_id=${game_id}`,
+                dataType: "html",
+                success: function(data, status) {
+                    $("#table-container").html(data);   // Insert the table HTML into the table container
+                },
+            });
+        }
+
+        // Add event listener to the select dropdown
+        $(document).on('change', '#gameIdSelect', function() {
+            $("#table-container").html("<p>Loading historical data...</p>");
+            const selectedGameId = $(this).val();
+            show_history(selectedGameId);
+        });
+    </script>
+</head>
+<body>
+    <h2>Select Game ID</h2>
+    <div id="gameIdsContainer">
+        <!-- This is where the game IDs select dropdown will be displayed -->
+        <p>Loading game IDs...</p>
+    </div>
+
+    <h2>Hand History</h2>
+    <div id="table-container"></div>
+
+</body>
+</html>
