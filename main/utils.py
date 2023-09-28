@@ -5,6 +5,7 @@ import os
 import pygetwindow
 from time import sleep
 from math import sqrt
+from database_controller import *
 
 
 def read_config_file(filename='../config.yaml'):
@@ -98,20 +99,6 @@ def thresholding(img, value_1, value_2):
     Returns: binary_img(numpy.ndarray)
     """
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    # if len(img.shape) == 2:
-    #     height, width = img.shape
-    # elif len(img.shape) == 3:
-    #     height, width, channels = img.shape
-    #
-    # factor = 1600 / width
-    # width = 1600
-    # height = int(height * factor)
-    # img = cv2.resize(img.copy(), (width, height))
-    # cv2.imshow('Image', img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
     _, binary_img = cv2.threshold(img, value_1, value_2, cv2.THRESH_BINARY)
     return binary_img
 
@@ -268,4 +255,10 @@ def data_concatenate(hero_hand, table_cards, total_pot, equity, players_info):
            '------------------------------' + '\n' + text_players_info
     return text
 
+
+def save_history(df_history, table_name='history'):
+    poker_db_dao = PokerDB()
+    poker_db_dao.build_connection()
+    poker_db_dao.append_df(df=df_history, table_name=table_name)
+    poker_db_dao.close_connection()
 
