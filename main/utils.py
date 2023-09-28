@@ -256,9 +256,5 @@ def data_concatenate(hero_hand, table_cards, total_pot, equity, players_info):
     return text
 
 
-def save_history(df_history, table_name='history'):
-    poker_db_dao = PokerDB()
-    poker_db_dao.build_connection()
-    poker_db_dao.append_df(df=df_history, table_name=table_name)
-    poker_db_dao.close_connection()
+
 

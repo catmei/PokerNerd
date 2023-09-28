@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, jsonify
 from flask_socketio import SocketIO
-from main.database_controller import PokerDB
+from database_controller import PokerDB
 
 
 app = Flask(__name__)

@@ -5,13 +5,21 @@ import json
 import pyautogui
 import pygetwindow
 from pokerstars_recognition import PokerStarsTableRecognizer
-from utils import read_config_file, resize_window, save_history
+from utils import read_config_file, resize_window
+from database_controller import PokerDB
 from strategy import calc_equity, remove_cards
 from trigger_update_post import trigger_update_strategy
 import time
 from enum import Enum
 import os
 import uuid
+
+
+def save_history(df_history, table_name='history'):
+    poker_db_dao = PokerDB()
+    poker_db_dao.build_connection()
+    poker_db_dao.append_df(df=df_history, table_name=table_name)
+    poker_db_dao.close_connection()
 
 
 class ROUND(Enum):
