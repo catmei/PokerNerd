@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import os
-from main.utils import sort_bboxes, thresholding, card_separator, table_part_recognition, convert_contours_to_bboxes, find_by_template, find_closer_point
+from utils import sort_bboxes, thresholding, card_separator, table_part_recognition, convert_contours_to_bboxes, find_by_template, find_closer_point
 
 
 class ImageTest:

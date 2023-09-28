@@ -162,5 +162,5 @@ cython_debug/
 *.xml
 
 # test game history screenshot
-images/
+test_games_screenshots/
 image_recognition_test/**/*.png
