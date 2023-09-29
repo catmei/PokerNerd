@@ -23,17 +23,20 @@ def resize_window(title, width, height):
 
 def position_windows():
     # adjust order
-    window_tutor = pygetwindow.getWindowsWithTitle('PokerNerd')[1]
+    window_tutor = pygetwindow.getWindowsWithTitle('PokerNerd --Tutor Mode--')[0]
     window_tutor.activate()
 
     window_game = pygetwindow.getWindowsWithTitle('Hold')[0]
-    window_game.activate()
+    window_game.minimize()
+    window_game.restore()
 
     if window_tutor:
         window_tutor.moveTo(-5, 0)
 
     if window_game:
         window_game.moveTo(510, 0)
+
+
 
 
 def save_history(df_history, table_name='history'):
@@ -246,6 +249,7 @@ class GameRecorder:
         if source == 'live':
             resize_window('Hold', 2000, 1500)
             position_windows()
+            time.sleep(1)
             while True:
                 window = pygetwindow.getWindowsWithTitle(self.window_name)[0]
                 screenshot = pyautogui.screenshot(region=(window.left, window.top, window.width, window.height))
