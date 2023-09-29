@@ -5,7 +5,7 @@ import json
 import pyautogui
 import pygetwindow
 from pokerstars_recognition import PokerStarsTableRecognizer
-from utils import read_config_file, resize_window
+from utils import read_config_file
 from database_controller import PokerDB
 from strategy import calc_equity, remove_cards
 from trigger_update_post import trigger_update_strategy
@@ -13,6 +13,27 @@ import time
 from enum import Enum
 import os
 import uuid
+
+
+def resize_window(title, width, height):
+    window = pygetwindow.getWindowsWithTitle(title)[0]  # Get the first window with the specified title
+    if window:
+        window.resizeTo(width, height)
+
+
+def position_windows():
+    # adjust order
+    window_tutor = pygetwindow.getWindowsWithTitle('PokerNerd')[1]
+    window_tutor.activate()
+
+    window_game = pygetwindow.getWindowsWithTitle('Hold')[0]
+    window_game.activate()
+
+    if window_tutor:
+        window_tutor.moveTo(-5, 0)
+
+    if window_game:
+        window_game.moveTo(510, 0)
 
 
 def save_history(df_history, table_name='history'):
@@ -30,14 +51,14 @@ class ROUND(Enum):
 
 
 class GameRecorder:
-    window_name = "Hold'em"
+    window_name = "Hold"
 
     def __init__(self, conf_path):
         self.save_2_db = None
         self.mode = None
         self.config = read_config_file(filename=conf_path)
-        self.column_names = ['game_id', 'round', 'player', 'position', 'equity', 'action', 'number', 'stack_before',
-                             'stack_after', 'pot_before', 'pot_after', 'my_cards', 'table_cards']
+        self.column_names = ['game_id', 'round', 'player', 'position', 'equity', 'action', 'number', 'pot_before',
+                             'pot_after', 'stack_before', 'stack_after', 'my_cards', 'table_cards']
         # 'stack_size', 'my_cards', 'table_cards', 'equity']
         self.history = pd.DataFrame(columns=self.column_names)
 
@@ -223,12 +244,13 @@ class GameRecorder:
         self.mode = source
         count = 0
         if source == 'live':
+            resize_window('Hold', 2000, 1500)
+            position_windows()
             while True:
-                resize_window(self.window_name, 2000, 1500)
                 window = pygetwindow.getWindowsWithTitle(self.window_name)[0]
                 screenshot = pyautogui.screenshot(region=(window.left, window.top, window.width, window.height))
                 if save_screenshot:
-                    screenshot.save(f'images/screenshot_{count}.png')
+                    screenshot.save(f'test_games_screenshots/screenshot_{count}.png')
                 count += 1
                 screenshot = np.array(screenshot)
                 screenshot = cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR)

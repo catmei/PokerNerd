@@ -3,7 +3,7 @@ import json
 
 
 def trigger_update_strategy(data):
-    url = "http://127.0.0.1:9000/trigger_update"
+    url = "http://13.237.171.252:9000/trigger_update"
 
     payload = json.dumps(data)
     headers = {

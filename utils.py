@@ -18,10 +18,6 @@ def read_config_file(filename='../config.yaml'):
         loaded_data = yaml.safe_load(stream)
         return loaded_data
 
-def resize_window(title, width, height):
-    window = pygetwindow.getWindowsWithTitle(title)[0]  # Get the first window with the specified title
-    if window:
-        window.resizeTo(width, height)
 
 def sort_bboxes(bounding_boxes, method):
     """
