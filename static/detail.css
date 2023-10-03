@@ -1,0 +1,73 @@
+/* Add the same CSS styles as on the main page */
+body, html, div, h1, p {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #2c2c2c; /* Dark background color */
+    color: #ccc; /* Light text color */
+    line-height: 1.6;
+}
+
+h1 {
+    font-size: 36px;
+    margin-bottom: 20px;
+    color: #fff; /* White text color for headings */
+    padding: 20px;
+}
+
+/* Styling for the container */
+#table-container {
+    margin: 20px;
+    padding: 20px;
+    background-color: #3c3c3c; /* Slightly lighter dark color for containers */
+    border: 1px solid #555; /* Dark border color */
+    border-radius: 5px;
+    color: #ccc; /* Light text color */
+}
+
+#table-container{
+    width: 95%;
+    height: 400px;
+    margin: auto;
+    margin-bottom: 20px; 
+    overflow-y: auto; /* This property will add a vertical scrollbar */
+
+}
+
+/* Add the table styling here */
+.dataframe {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background-color: #3c3c3c;
+    color: #ccc;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.dataframe th {
+    background-color: #555;
+    color: #fff;
+    padding: 10px;
+    text-align: left;
+}
+
+.dataframe td {
+    padding: 10px;
+    border-top: 1px solid #555;
+}
+
+.dataframe tr:hover {
+    background-color: #444;
+    cursor: pointer;
+}
+
+
+.dataframe a:hover {
+    color: #0ff;
+    text-decoration: underline;
+}

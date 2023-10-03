@@ -230,6 +230,18 @@ class PokerStarsTableRecognizer(PokerTableRecognizer):
         players_info = self.get_missing_players(players_info, path_to_template_img, flag)
         return players_info
 
+    def check_is_player_empty(self, player):
+        path_to_template_img = 'empty_seat'
+        bbox = self.cfg['players_coordinates'][player]
+
+        player_img = self.img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+        max_val, _ = find_by_template(player_img, self.cfg['paths'][path_to_template_img])
+
+        if max_val > 0.8:
+            return True
+        else:
+            return False
+
     def get_so_players(self, players_info):
         """
         find players who are not currently in the game

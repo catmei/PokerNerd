@@ -231,9 +231,9 @@ class ImageTest:
         for player, bbox in players_coordinates.items():
             if player != 1 and player in players_for_checking:
                 player_img = self.img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+                self.show_image(player_img)
                 max_val, _ = find_by_template(player_img, self.cfg['paths'][path_to_template_img])
 
-                # print(f'player: {player}, max_val: {max_val}')
                 if max_val > 0.8:
                     players_info[player] = flag
         return players_info
@@ -246,6 +246,20 @@ class ImageTest:
         flag = '-'
         players_info = self.get_missing_players(players_info, path_to_template_img, flag)
         return players_info
+
+    def check_is_player_empty(self, player):
+        path_to_template_img = 'empty_seat'
+        bbox = self.cfg['players_coordinates'][player]
+
+        player_img = self.img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+        self.show_image(player_img)
+        print(self.cfg['paths'][path_to_template_img])
+        max_val, _ = find_by_template(player_img, self.cfg['paths'][path_to_template_img])
+
+        if max_val > 0.8:
+            return True
+        else:
+            return False
 
     def get_so_players(self, players_info):
         """

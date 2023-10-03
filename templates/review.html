@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>PokerNerd --Review Mode--</title>
+    <link rel="stylesheet" type="text/css" href="../static/review.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script type="text/javascript" src="../static/review.js"></script>
+</head>
+<body>
+    <!-- <h2>Filter</h2> -->
+    <div id="filter-container">
+        <label for="startDate">Start Date:</label>
+        <input type="date" id="startDate" value="2023-09-01">
+        <label for="endDate">End Date:</label>
+        <input type="date" id="endDate" value="2023-11-01">
+        <label for="positions">Position:</label>
+        <select id="positions" name="positions">
+            <option value="ALL" selected>ALL</option>
+            <option value="CO">CO</option>
+            <option value="BTN">BTN</option>
+            <option value="SB">SB</option>
+            <option value="BB">BB</option>
+            <option value="UTG">UTG</option>
+            <option value="MP">MP</option>
+        </select>
+        <button onclick="ShowData()">Search</button>
+    </div>
+    <div id="charts-wrapper">
+        <!-- <h2>Hand History Overview</h2> -->
+        <div id="table-container" class="chart-container">
+            <p>Loading Hand History Overview...</p>
+        </div>
+        <!-- <h2>Performance History</h2> -->
+        <div id="history-performance-container" class="chart-container">
+            <p>Loading Performance History...</p>
+        </div>
+        <!-- <h2>Hole Cards Performance</h2> -->
+        <div id="hole-cards-performance-container" class="chart-container">
+            <p>Loading Hole Cards Performance...</p>
+        </div>
+        <!-- <h2>Position Performance</h2> -->
+        <div id="position-performance-container" class="chart-container">
+            <p>Loading Position Performance...</p>
+        </div>
+    </div>
+
+    <script>
+        ShowData();
+    </script>
+</body>
+</html>
