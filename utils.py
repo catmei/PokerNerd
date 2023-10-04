@@ -18,10 +18,6 @@ def read_config_file(filename='../config.yaml'):
         loaded_data = yaml.safe_load(stream)
         return loaded_data
 
-def resize_window(title, width, height):
-    window = pygetwindow.getWindowsWithTitle(title)[0]  # Get the first window with the specified title
-    if window:
-        window.resizeTo(width, height)
 
 def sort_bboxes(bounding_boxes, method):
     """
@@ -116,6 +112,7 @@ def table_part_recognition(img, directory, color_of_img):
     err_dict = {}
     for full_image_name in os.listdir(directory):
         image_name = full_image_name.split('.')[0]
+        # print(directory + full_image_name)
         err = image_comparison(img, directory + full_image_name, color_of_img)
         err_dict[image_name] = err
     table_part = min(err_dict, key=err_dict.get)
@@ -256,9 +253,5 @@ def data_concatenate(hero_hand, table_cards, total_pot, equity, players_info):
     return text
 
 
-def save_history(df_history, table_name='history'):
-    poker_db_dao = PokerDB()
-    poker_db_dao.build_connection()
-    poker_db_dao.append_df(df=df_history, table_name=table_name)
-    poker_db_dao.close_connection()
+
 
