@@ -11,7 +11,7 @@ if __name__ == "__main__":
         config = yaml.safe_load(stream)
 
     # Initialize
-    image = cv2.imread(r'C:\Users\b0220\Documents\data_engineering\PokerNerd\main\images\game1\screenshot_261.png')
+    image = cv2.imread(r'C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\1696154419\295.png')
     image_test = ImageTest(image, config)
     image_test.show_image()
 
@@ -32,24 +32,24 @@ if __name__ == "__main__":
     # print(table_cards)
 
     # detect action
-    action = image_test.detect_action(player=3)
-    print(action)
+    # action = image_test.detect_action(player=3)
+    # print(action)
 
     # # detect my cards
     # my_cards = image_test.detect_hero_cards()
     # print(my_cards)
 
-    # # find dealer
+    # find dealer
     # image = cv2.imread('bet_image/bet_all.png')
     # image_test = ImageTest(image, config)
     # image_test.show_image()
-    # players_info = image_test.get_dealer_button_position()
-    # print(players_info)
-    #
+    players_info = image_test.get_dealer_button_position()
+    print(players_info)
+
     # # find empty seat
     # players_info = image_test.get_empty_seats(players_info)
     # print(players_info)
-    #
+
     # # find sitting out players
     # players_info = image_test.get_so_players(players_info)
     # print(players_info)
@@ -60,6 +60,11 @@ if __name__ == "__main__":
     # players_info = image_test.find_players_bet_(players_info)
     # print(players_info)
     # exit()
+
+    # check if player empty
+    # is_empty = image_test.check_is_player_empty(2)
+    # print(is_empty)
+
 
     # # find bet by player
     # for i in range(1,7):

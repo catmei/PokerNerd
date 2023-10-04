@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PokerNerd --Tutor Mode--</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+    <style>
+        /* Reset default styles */
+        body, html, div, p {
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
+        /* Apply dark background and light text */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c2c2c;
+            color: #ccc;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        /* Apply red color to headings and details */
+        p {
+            margin-bottom: 10px;
+            font-size: 18px;
+            /* color: #ff4757; Red color */
+        }
+
+        .flex-container {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .text-container, .video-container {
+            padding: 20px;
+        }
+
+        .text-container {
+            max-width: 50%;
+        }
+
+        .video-container {
+            max-width: 50%;
+            margin-right: 50px;
+        }
+
+        /* Animation */
+        @keyframes flash {
+            0% { color: #ff4757; }
+            100% { color: #ccc; }
+        }
+
+        .flash {
+            animation: flash 0.5s ease-in-out;
+            animation-fill-mode: forwards;
+        }
+    </style>
+
+    <script type="text/javascript">
+        // const url =  'http://127.0.0.1:9000'   //13.237.171.252
+        const socket = io();
+
+        socket.on('update_ui', function(data) {
+            console.log(data)
+
+            if (data['method'] === 'strategy'){
+                document.getElementById('equity').innerHTML = "Equity: <br>" + data.equity;
+                document.getElementById('action').innerHTML = "Action: <br>" + data.action;
+                document.getElementById('amount').innerHTML = "Amount: <br>" + data.amount;
+                document.getElementById('analysis').innerHTML = "Analysis: <br>" + data.analysis
+            } else if(data['method'] === 'table-cards'){
+                document.getElementById('table-cards').innerHTML = "Table Cards: <br>" + data['table-cards']
+            } else if(data['method'] === 'my-cards'){
+                document.getElementById('my-cards').innerHTML = "My Cards: <br>" + data['my-cards']
+            } else if(data['method'] === 'pot'){
+                document.getElementById('pot').innerHTML = "Pot: <br>" + data.pot
+            } else if(data['method'] === 'clean'){
+                document.getElementById('table-cards').innerHTML = "Table Cards: <br> --"
+                document.getElementById('my-cards').innerHTML = "My Cards: <br> --"
+                document.getElementById('pot').innerHTML = "Pot: <br> --"
+                document.getElementById('equity').innerHTML = "Equity: <br> --"
+                document.getElementById('action').innerHTML = "Action: <br> --"
+                document.getElementById('amount').innerHTML = "Amount: <br> --"
+                document.getElementById('analysis').innerHTML = "Analysis: <br> --"
+            }
+
+            // Add flash animation when content changes
+            if (data['method'] !== 'clean') {
+                Object.keys(data).forEach(key => {
+                    if (key !== 'method') {
+                        const element = document.getElementById(key);
+                        if (element) {
+                            element.classList.add('flash');
+
+                            // Remove the flash class after animation completes
+                            setTimeout(() => {
+                                element.classList.remove('flash');
+                            }, 500);
+                        }
+                    }
+                });
+            }
+        });
+
+    </script>
+</head>
+<body>
+    <div class="flex-container">
+        <div class="text-container">
+            <p id="table-cards">Table Cards: <br> --</p>
+            <p id="my-cards">My Cards: <br> --</p>
+            <p id="pot">Pot: <br> --</p>
+            <p>------------------------------------------------------------------</p>
+            <p id="equity">Equity: <br> --</p>
+            <p id="action">Action: <br> --</p>
+            <p id="amount">Amount: <br> --</p>
+            <p id="analysis">Analysis: <br> --</p>
+        </div>
+
+        <div class="video-container">
+            <p>Demo Video</p>
+            <video width="640" height="360" controls>
+                <source src="https://catvin-bucket-stylish.s3.ap-southeast-2.amazonaws.com/demo_KQ_.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+</body>
+</html>
