@@ -32,8 +32,7 @@ def detail_page():
     detail = poker_db_dao.fetch_history_by_game_id(game_id)
     detail = detail[['round', 'player', 'position', 'action', 'number', 'pot_before', 'pot_after',
                      'stack_before', 'stack_after']]
-    print(detail)
-    print(detail.columns)
+    # print(detail)
     table_html = detail.to_html()
     return render_template('detail.html', table_html=table_html)
 
@@ -55,7 +54,11 @@ def get_hand_history_overview():
     poker_db_dao = PokerDB()
     poker_db_dao.build_connection()
     df_history_overview = poker_db_dao.fetch_history_overview_by_timestamp(start, end)
-    df_history_overview['pnl'] = df_history_overview['pnl'].apply(lambda x: x + random.randint(-5000, 5000))
+
+    exist_positions = ['BTN', 'SB', 'BB', 'UTG', 'MP', 'CO']
+    random.seed(1)
+    df_history_overview['position'] = df_history_overview['position'].apply(lambda x: exist_positions[random.randint(0, 5)])
+    df_history_overview['pnl'] = df_history_overview['pnl'].apply(lambda x: x + random.randint(-4000, 5000))
 
     df_history_overview['game_id'] = df_history_overview['game_id'].astype(int)
     df_history_overview['datetime'] = pd.to_datetime(df_history_overview['game_id'], unit='s')
@@ -66,7 +69,7 @@ def get_hand_history_overview():
         lambda x: f'<a href="detail.html?game_id={x}" target="_blank">Details</a>'
     )
     df_history_overview = df_history_overview[['datetime', 'position', 'hole_cards', 'community_cards', 'pnl', 'details']]
-    print(df_history_overview)
+    # print(df_history_overview)
 
     poker_db_dao.close_connection()
     table_html = df_history_overview.to_html(escape=False, index=False)
@@ -82,9 +85,11 @@ def get_performance_history():
     poker_db_dao.build_connection()
     df_history_overview = poker_db_dao.fetch_history_overview_by_timestamp(start, end)
     random.seed(1)
-    df_history_overview['pnl'] = df_history_overview['pnl'].apply(lambda x: x + random.randint(-5000, 5000))
-    df_history_overview['all_in_ev'] = df_history_overview['pnl'].apply(lambda x: x - random.randint(0, 500))
-    print(df_history_overview)
+    df_history_overview['pnl'] = df_history_overview['pnl'].apply(lambda x: x + random.randint(-4000, 5000))
+    df_history_overview['all_in_ev'] = df_history_overview['pnl'].apply(lambda x: x - random.randint(0, 1000))
+    df_history_overview['pnl'] = df_history_overview['pnl'].cumsum()
+    df_history_overview['all_in_ev'] = df_history_overview['all_in_ev'].cumsum()
+    # print(df_history_overview)
 
     performance_json = {
         'pnl': df_history_overview['pnl'].tolist(),
@@ -137,12 +142,14 @@ def get_position_performance():
     poker_db_dao = PokerDB()
     poker_db_dao.build_connection()
     df_history_overview = poker_db_dao.fetch_history_overview_by_timestamp(start, end)
+    exist_positions = ['BTN', 'SB', 'BB', 'UTG', 'MP', 'CO']
     random.seed(1)
-    df_history_overview['pnl'] = df_history_overview['pnl'].apply(lambda x: x + random.randint(-5000, 5000))
+    df_history_overview['position'] = df_history_overview['position'].apply(lambda x: exist_positions[random.randint(0, 5)])
+    df_history_overview['pnl'] = df_history_overview['pnl'].apply(lambda x: x + random.randint(-4500, 5000))
+    # print(df_history_overview)
     grouped_pnl = df_history_overview.groupby('position')['pnl'].sum().reset_index()
     grouped_pnl = grouped_pnl.sort_values(by='pnl', ascending=False).to_dict('list')
-    # pnl_dict = grouped_pnl.set_index('position')['pnl'].to_dict()
-    print(grouped_pnl)
+    # print(grouped_pnl)
     return jsonify(grouped_pnl)
 
 

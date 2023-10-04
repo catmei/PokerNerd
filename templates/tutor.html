@@ -28,18 +28,24 @@
             /* color: #ff4757; Red color */
         }
 
-        /* div {
-            background-color: #3c3c3c; 
-            padding: 20px;
-            border: 1px solid #555; 
-            border-radius: 5px; 
-            margin: 20px 0; 
-        } */
+        .flex-container {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
 
-        /* Highlight specific data in red */
-        /* #equity, #action, #amount {
-            color: #ff4757;
-        } */
+        .text-container, .video-container {
+            padding: 20px;
+        }
+
+        .text-container {
+            max-width: 50%;
+        }
+
+        .video-container {
+            max-width: 50%;
+            margin-right: 50px;
+        }
 
         /* Animation */
         @keyframes flash {
@@ -54,8 +60,8 @@
     </style>
 
     <script type="text/javascript">
-        const url =  'http://13.237.171.252:9000'   
-        const socket = io.connect(url);
+        // const url =  'http://127.0.0.1:9000'   //13.237.171.252
+        const socket = io();
 
         socket.on('update_ui', function(data) {
             console.log(data)
@@ -102,17 +108,25 @@
     </script>
 </head>
 <body>
-    <div>
-        <p id="table-cards">Table Cards: <br> --</p>
-        <p id="my-cards">My Cards: <br> --</p>
-        <p id="pot">Pot: <br> --</p>
-        
-        <p>------------------------------------------------------------------</p>
-    
-        <p id="equity">Equity: <br> --</p>
-        <p id="action">Action: <br> --</p>
-        <p id="amount">Amount: <br> --</p>
-        <p id="analysis">Analysis: <br> --</p>
+    <div class="flex-container">
+        <div class="text-container">
+            <p id="table-cards">Table Cards: <br> --</p>
+            <p id="my-cards">My Cards: <br> --</p>
+            <p id="pot">Pot: <br> --</p>
+            <p>------------------------------------------------------------------</p>
+            <p id="equity">Equity: <br> --</p>
+            <p id="action">Action: <br> --</p>
+            <p id="amount">Amount: <br> --</p>
+            <p id="analysis">Analysis: <br> --</p>
+        </div>
+
+        <div class="video-container">
+            <p>Demo Video</p>
+            <video width="640" height="360" controls>
+                <source src="https://catvin-bucket-stylish.s3.ap-southeast-2.amazonaws.com/demo_KQ_.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
     </div>
 </body>
 </html>

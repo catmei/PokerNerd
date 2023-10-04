@@ -90,6 +90,11 @@ class GameRecorder:
 
             # define round
             if not pot and self.new_game_start == 0:
+                data = {
+                    'method': 'clean'
+                }
+                trigger_update_strategy(data)
+
                 # save last game history
                 if self.game_id:
                     # pd.set_option('display.max_rows', None)
@@ -118,11 +123,6 @@ class GameRecorder:
                 self.round = None
                 self.my_cards = []
                 self.last_players_turn = None
-
-                data = {
-                    'method': 'clean'
-                }
-                trigger_update_strategy(data)
 
                 # new game starts
                 print('=' * 50)
@@ -211,7 +211,7 @@ class GameRecorder:
                                     analysis = 'extremely weak hand'
                                 else:
                                     action = 'bet'
-                                    optimal_bet_amount = int(pot) * equity / (100 - 2*equity)
+                                    optimal_bet_amount = pot * 1/6  # pot * equity / (100 - 2 * equity)
                                     analysis = 'weak hand'
                             else:
                                 action = 'bet'
@@ -222,7 +222,11 @@ class GameRecorder:
                                     optimal_bet_amount = pot
                                     analysis = 'extremely strong hand'
 
-                        # optimal_bet_amount = math.ceil(optimal_bet_amount/100) * 100 if optimal_bet_amount else optimal_bet_amount
+                        if optimal_bet_amount:
+                            optimal_bet_amount = int(optimal_bet_amount)
+                            if optimal_bet_amount < 100:
+                                optimal_bet_amount = 100
+
                         # print(f'Action: {action}')
                         # print(f'Max Bet Amount: {optimal_bet_amount}')
 
