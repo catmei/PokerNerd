@@ -1,9 +1,13 @@
 from flask import Flask, request, render_template, jsonify
 from flask_socketio import SocketIO
+from google.oauth2 import id_token
+from google.auth.transport import requests
 from database_controller import PokerDB
 import random
 import pandas as pd
 
+
+GOOGLE_OAUTH2_CLIENT_ID = "181660370045-c90hkfs2rmct3q3mopsjk2qajeflhrso.apps.googleusercontent.com"
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -11,7 +15,34 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/')
 def homepage():
-    return render_template('homepage.html')
+    return render_template('index.html')
+
+
+# @app.route('/')
+# def homepage():
+#     return render_template('homepage.html', google_oauth2_client_id=GOOGLE_OAUTH2_CLIENT_ID)
+
+
+@app.route('/google_sign_in', methods=['POST'])
+def google_sign_in():
+    print(request.json)
+
+    token = request.json['id_token']
+
+    try:
+        id_info = id_token.verify_oauth2_token(
+            token,
+            requests.Request(),
+            GOOGLE_OAUTH2_CLIENT_ID
+        )
+        if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+            raise ValueError('Wrong issuer.')
+    except ValueError:
+        # Invalid token
+        raise ValueError('Invalid token')
+
+    print('登入成功')
+    return jsonify({}), 200
 
 
 @app.route('/tutor.html')
@@ -32,7 +63,21 @@ def detail_page():
     detail = poker_db_dao.fetch_history_by_game_id(game_id)
     detail = detail[['round', 'player', 'position', 'action', 'number', 'pot_before', 'pot_after',
                      'stack_before', 'stack_after']]
+
+    detail = detail.rename(columns={
+        'round': 'Round',
+        'player': 'Player',
+        'position': 'Position',
+        'action': 'Action',
+        'number': 'Number',
+        'hole_cards': 'Hole Cards',
+        'pot_before': 'Pot Before',
+        'pot_after': 'Pot After',
+        'stack_before': 'Stack Before',
+        'stack_after': 'Stack After'
+    })
     # print(detail)
+
     table_html = detail.to_html()
     return render_template('detail.html', table_html=table_html)
 
@@ -64,11 +109,33 @@ def get_hand_history_overview():
     df_history_overview['datetime'] = pd.to_datetime(df_history_overview['game_id'], unit='s')
     df_history_overview['datetime'] = df_history_overview['datetime'].dt.tz_localize('UTC')
     df_history_overview['datetime'] = df_history_overview['datetime'].dt.tz_convert('Asia/Taipei')
+    df_history_overview['datetime'] = df_history_overview['datetime'].dt.strftime('%Y-%m-%d %H:%M:%S')
     df_history_overview['details'] = df_history_overview['game_id']
     df_history_overview['details'] = df_history_overview['game_id'].apply(
         lambda x: f'<a href="detail.html?game_id={x}" target="_blank">Details</a>'
     )
+
+    def cards_to_emoji(cards):
+        suits_to_emoji = {'s': '♠', 'h': '♥', 'd': '♦', 'c': '♣'}
+        cards_string = ''
+        for card in cards:
+            cards_string += card[:-1] + suits_to_emoji[card[-1]] + ' '
+        return cards_string
+
+    df_history_overview['community_cards'] = df_history_overview['community_cards'].apply(cards_to_emoji)
+    df_history_overview['hole_cards'] = df_history_overview['hole_cards'].apply(cards_to_emoji)
+
     df_history_overview = df_history_overview[['datetime', 'position', 'hole_cards', 'community_cards', 'pnl', 'details']]
+    df_history_overview = df_history_overview.rename(columns={
+        'datetime': 'Datetime',
+        'position': 'Position',
+        'hole_cards': 'Hole Cards',
+        'community_cards': 'Community Cards',
+        'pnl': 'P&L',
+        'details': 'Details'
+    })
+
+
     # print(df_history_overview)
 
     poker_db_dao.close_connection()
