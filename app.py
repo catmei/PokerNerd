@@ -1,13 +1,9 @@
 from flask import Flask, request, render_template, jsonify
 from flask_socketio import SocketIO
-from google.oauth2 import id_token
-from google.auth.transport import requests
 from database_controller import PokerDB
 import random
 import pandas as pd
 
-
-GOOGLE_OAUTH2_CLIENT_ID = "181660370045-c90hkfs2rmct3q3mopsjk2qajeflhrso.apps.googleusercontent.com"
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -15,34 +11,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/')
 def homepage():
-    return render_template('index.html')
-
-
-# @app.route('/')
-# def homepage():
-#     return render_template('homepage.html', google_oauth2_client_id=GOOGLE_OAUTH2_CLIENT_ID)
-
-
-@app.route('/google_sign_in', methods=['POST'])
-def google_sign_in():
-    print(request.json)
-
-    token = request.json['id_token']
-
-    try:
-        id_info = id_token.verify_oauth2_token(
-            token,
-            requests.Request(),
-            GOOGLE_OAUTH2_CLIENT_ID
-        )
-        if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-            raise ValueError('Wrong issuer.')
-    except ValueError:
-        # Invalid token
-        raise ValueError('Invalid token')
-
-    print('登入成功')
-    return jsonify({}), 200
+    return render_template('homepage.html')
 
 
 @app.route('/tutor.html')
