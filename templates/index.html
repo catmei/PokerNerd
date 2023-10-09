@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <script>
+        function handleCallback(response) {
+            console.log(response);
+        }
+    </script>
+    <div
+        id="g_id_onload"
+        data-client_id="181660370045-c90hkfs2rmct3q3mopsjk2qajeflhrso.apps.googleusercontent.com"
+        data-callback="handleCallback"
+        data-auto_prompt="false"
+    ></div>
+    <div
+        class="g_id_signin"
+        data-type="standard"
+        data-size="large"
+        data-theme="outline"
+        data-text="sign_in_with"
+        data-shape="pill"
+        data-logo_alignment="left"
+    ></div>
+    
+</body>
+</html>
+
