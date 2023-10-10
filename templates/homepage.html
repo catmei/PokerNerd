@@ -2,41 +2,326 @@
 <html>
 <head>
     <title>PokerNerd</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        padding-top: 50px;
-        background-color: #2c2c2c; /* Dark background color */
-        color: #ccc; /* Light text color */
-    }
-    h1 {
-        color: #ff4757; /* Red color for headings */
-    }
-    a {
-        display: block;
-        margin: 20px auto;
-        padding: 10px 20px;
-        text-decoration: none;
-        background-color: #555; /* Dark background for link */
-        color: #fff; /* Light text color for link */
-        border-radius: 5px;
-        width: 150px;
-    }
-    a:hover {
-        background-color: #ff4757; /* Red color for link hover */
-        color: #fff; /* Keeping the text color light on hover */
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #2c2c2c; /* Dark background color */
+            color: #ccc; /* Light text color */
+        }
+
+        #usernameDisplay {
+            position: absolute;
+            top: 15px;
+            right: 90px;
+            color: #ff4757;  /* Color of the username text */
+        }
+
+        #logoutButton {
+            position: absolute;
+            top: 10px;
+            display: none;
+            right: 15px;  /* Adjust the value as needed to position the logout button */
+            background-color: #555;
+            color: white;
+            padding: 5px 10px;  /* Reduced padding */
+            font-size: 0.8em;   /* Reduced font size */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #logoutButton:hover {
+            background-color: #ff4757;
+        }
+
+        h1 {
+            color: #ff4757; /* Red color for headings */
+        }
+        a {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            text-decoration: none;
+            background-color: #555; /* Dark background for link */
+            color: #fff; /* Light text color for link */
+            border-radius: 5px;
+            width: 150px;
+        }
+        a:hover {
+            background-color: #ff4757; /* Red color for link hover */
+            color: #fff; /* Keeping the text color light on hover */
+        }
+
+        body, html {
+            height: 100%;
+            margin: 0;
+        }
+
+        #background-image {
+            position: relative;
+            height: 100vh; /* Full height of the viewport */
+            z-index: 0; /* Updated the z-index */
+            background: url('https://catvin-bucket-stylish.s3.ap-southeast-2.amazonaws.com/homepage.png');
+            -webkit-background-size: cover;
+            -moz-background-size: cover;
+            -o-background-size: cover;
+            background-size: cover;
+            opacity: 0.075; /* Adjust the opacity here */
+        }
+
+        #content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center; /* Align content to the start */
+            align-items: center;     /* Center content horizontally */
+            flex-direction: column;
+            z-index: 1; /* Make sure the content is above the background */
+        }
+
+        .auth-buttons {
+            display: inline-block;
+        }
+
+        .btn {
+            display: inline-block;
+            margin: 20px;
+            padding: 10px 20px;
+            background-color: #555; /* Dark background for button */
+            color: #fff; /* Light text color for button */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer; /* Change cursor to pointer when hovering over the button */
+            transition: background-color 0.3s ease; /* Smooth transition for background color change */
+        }
+
+        .btn:hover {
+            background-color: #ff4757; /* Red color for button hover */
+        }
+
+        .modal {
+            display: none;
+            position: fixed; /* Fixed position */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #555;
+            margin: 5% auto; /* 5% from the top and centered */
+            padding: 20px;
+            border: 1px solid #ff4757;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+
+    </style>
+    <script>
+        $(document).ready(function() {
+            const token = getCookie('jwt');
+            if (token) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/verify_token',  // Your server-side route to verify the token
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    success: function(data, status) {
+                        console.log(data.payload);
+                        displayUsername(data.payload.username);
+                        displaySignout();
+                        $(".auth-buttons").hide();  // Hiding the buttons if response is 'OK'
+                        $(".modal").hide();
+        
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.log('Unexpected error: ', textStatus, errorThrown);
+                        if (jqXHR.status == 401) {
+                            console.log(jqXHR.responseJSON.error);  // Log the error message returned from the server for 401 error
+                        }
+                        if (jqXHR.status == 400) {
+                            console.log(jqXHR.responseJSON.error);  // Log the error message returned from the server for 400 error
+                        }
+                        alert('Please Sign In');
+                    }
+                });
+            } else {
+                alert('Please Sign In');
+            }
+        });
+
+
+        function getCookie(name) {
+            var value = "; " + document.cookie;
+            var parts = value.split("; " + name + "=");
+            if (parts.length == 2) return parts.pop().split(";").shift();
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = "block";
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = "none";
+            }
+        }
+
+        function displayUsername(username) {
+            // Update the text content of the usernameDisplay element with the username
+            document.getElementById('usernameDisplay').textContent = username;
+        }
+
+        function setJwtCookie(jwt) {
+        // Set the JWT as a cookie
+        document.cookie = `jwt=${jwt}; samesite=strict; secure`; // Add `secure` attribute for HTTPS, remove it for local development if you don't have HTTPS
     }
 
-</style>
+        function submitSignUp() {
+            const username = document.getElementById("signUpUsername").value;
+            const password = document.getElementById("signUpPassword").value;
 
-    
+            console.log("Sign Up - Username: " + username + ", Password: " + password);
+            
+            $.ajax({
+                url: '/sign_up',
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                dataType: 'json',  // Expect a JSON response from server
+                data: JSON.stringify({ // Convert the JavaScript object to a JSON string
+                    "username": username,
+                    "password": password
+                }),
+                success: function(response) {
+                    console.log(response); // Log the response from the server to the console
+                    if (response.msg === 'OK'){
+                        $(".auth-buttons").hide();  // Hiding the buttons if response is 'OK'
+                        $(".modal").hide();
+                        alert('sign up successfully')
+                        displayUsername(username);
+                        displaySignout()
+                        setJwtCookie(response.jwt_token)
+                    }else {
+                        alert('Sign up failed: ' + response.msg);  // Assume an error message is returned in the response
+                    }
+                },
+                error: function(error) {
+                    console.error(error); // Log any errors to the console
+                }
+            });
+        }
+
+        function submitSignIn() {
+            const username = document.getElementById("signInUsername").value;
+            const password = document.getElementById("signInPassword").value;
+
+            console.log("Sign In - Username: " + username + ", Password: " + password);
+
+            $.ajax({
+                url: '/sign_in', // Replace with the URL of your backend endpoint
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                dataType: 'json',  // Expect a JSON response from server
+                data: JSON.stringify({ // Convert the JavaScript object to a JSON string
+                    "username": username,
+                    "password": password
+                }),
+                success: function(response) {
+                    console.log(response); // Log the response from the server to the console
+                    if (response.msg === 'OK'){
+                        $(".auth-buttons").hide();  // Hiding the buttons if response is 'OK'
+                        $(".modal").hide();
+                        alert('sign in successfully')
+                        displayUsername(username);
+                        displaySignout()
+                        setJwtCookie(response.jwt_token)
+                    }else {
+                        alert('Sign in failed: ' + response.msg);  // Assume an error message is returned in the response
+                    }
+                },
+                error: function(error) {
+                    console.error(error); // Log any errors to the console
+                }
+            });
+        }
+
+        function displaySignout(){
+            document.getElementById('logoutButton').style.display = 'block';
+        }
+
+        
+        function logout() {
+            console.log('Logged out');
+            document.getElementById('usernameDisplay').textContent = '';
+            document.getElementById('logoutButton').style.display = 'none';
+            $(".auth-buttons").show();
+            document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            location.reload(); 
+        }
+
+    </script>
 </head>
 <body>
-    <div>
-    <h1 id="main">PokerNerd</h1>
-        <a href="tutor.html" id="tutorMode">Tutor Mode</a>
+    <div id="background-image"></div> <!-- Background Image -->
+    <div id="content">  <!-- Content Overlay -->
+        <div id="usernameDisplay"></div>
+        <button id="logoutButton" onclick="logout()">Logout</button>
+
+        <h1 id="main">PokerNerd</h1>
+        <!-- Buttons -->
+        <div class="auth-buttons">
+            <button class="btn" onclick="openModal('signUpModal')">Sign Up</button>
+            <button class="btn" onclick="openModal('signInModal')">Sign In</button>
+        </div>
+
+        <div id="signUpModal" class="modal">
+            <div class="modal-content">
+                <form id="signUpForm">
+                    <input type="text" id="signUpUsername" placeholder="Username" required>
+                    <input type="password" id="signUpPassword" placeholder="Password" required>
+                    <input type="button" value="Sign Up" onclick="submitSignUp()">
+                </form>
+            </div>
+        </div>
+        <div id="signInModal" class="modal">
+            <div class="modal-content">
+                <form id="signInForm">
+                    <input type="text" id="signInUsername" placeholder="Username" required>
+                    <input type="password" id="signInPassword" placeholder="Password" required>
+                    <input type="button" value="Sign In" onclick="submitSignIn()">
+                </form>
+            </div>
+        </div>
+
+        <a href="tutor_demo.html" id="tutorMode">Tutor Mode</a>
         <a href="review.html" id="reviewMode">Review Mode</a>
     </div>
+
+
+    <script>
+
+    </script>
+
 </body>
 </html>

@@ -202,6 +202,50 @@ class ImageTest:
             number += symbol
         return number
 
+    def detect_stack_number(self, mode):
+        """
+        Returns:
+            number(str): number with player 1 stack number
+        """
+        stack_img = self.img[self.cfg['stack']['y_0']:self.cfg['stack']['y_1'],
+                    self.cfg['stack']['x_0']:self.cfg['stack']['x_1']]
+
+        self.show_image(stack_img, zoom_in=True)
+
+        # max_val, max_loc = find_by_template(img, self.cfg['paths']['pot_image'])
+        # print(f'highest correlation value: {max_val}')
+        #
+        # bet_img = img[max_loc[1] - 3:max_loc[1] + self.cfg['pot']['height'],
+        #               max_loc[0] + self.cfg['pot']['pot_template_width']:
+        #               max_loc[0] + self.cfg['pot']['pot_template_width'] + self.cfg['pot']['width']]
+        if mode == 1:
+            binary_img = thresholding(stack_img, self.cfg['stack']['value_1'], self.cfg['stack']['value_2'])
+        elif mode == 2:
+            binary_img = thresholding(stack_img, self.cfg['stack']['value_3'], self.cfg['stack']['value_4'])
+
+        self.show_image(binary_img, zoom_in=True)
+
+        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+        # eroded = cv2.erode(binary_img, kernel, iterations=1)
+        # self.show_image(eroded, zoom_in=True)
+
+        contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        self.show_image_with_contours(stack_img, contours)
+
+        bounding_boxes = convert_contours_to_bboxes(contours, self.cfg['stack']['min_height'], self.cfg['stack']['min_width'])
+        print(f"boxes count: {len(bounding_boxes)}")
+        self.show_image_with_boxes(stack_img, bounding_boxes)
+
+        bounding_boxes = sort_bboxes(bounding_boxes, method='left-to-right')
+        print(bounding_boxes)
+
+        number = ''
+        for bbox in bounding_boxes:
+            number_img = stack_img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+            symbol = table_part_recognition(number_img, self.cfg['paths']['stack_numbers'], cv2.IMREAD_GRAYSCALE)
+            number += symbol
+        return number
+
     def get_dealer_button_position(self):
         """
         determine who is closer to the dealer button

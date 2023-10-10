@@ -187,6 +187,30 @@ class PokerStarsTableRecognizer(PokerTableRecognizer):
         else:
             return None
 
+    def detect_stack_number(self, mode):
+        """
+        Returns:
+            number(str): number with player 1 stack number
+        """
+        stack_img = self.img[self.cfg['stack']['y_0']:self.cfg['stack']['y_1'],
+                    self.cfg['stack']['x_0']:self.cfg['stack']['x_1']]
+
+        if mode == 1:
+            binary_img = thresholding(stack_img, self.cfg['stack']['value_1'], self.cfg['stack']['value_2'])
+        elif mode == 2:
+            binary_img = thresholding(stack_img, self.cfg['stack']['value_3'], self.cfg['stack']['value_4'])
+
+        contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        bounding_boxes = convert_contours_to_bboxes(contours, self.cfg['stack']['min_height'], self.cfg['stack']['min_width'])
+        bounding_boxes = sort_bboxes(bounding_boxes, method='left-to-right')
+
+        number = ''
+        for bbox in bounding_boxes:
+            number_img = stack_img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+            symbol = table_part_recognition(number_img, self.cfg['paths']['pot_numbers'], cv2.IMREAD_GRAYSCALE)
+            number += symbol
+        return number
+
     def get_dealer_button_position(self):
         """
         determine who is closer to the dealer button

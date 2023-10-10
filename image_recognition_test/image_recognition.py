@@ -6,14 +6,18 @@ from image_class import ImageTest
 
 
 if __name__ == "__main__":
-    filename = '../config2.yaml'
+    filename = '../config_test.yaml'
     with open(filename, 'r') as stream:
         config = yaml.safe_load(stream)
 
     # Initialize
-    image = cv2.imread(r'C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\1696154419\295.png')
+    image = cv2.imread(r"C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\1696920593\391.png")
     image_test = ImageTest(image, config)
     image_test.show_image()
+
+    # detect my stack
+    stack_number = image_test.detect_stack_number(mode=2)
+    print(stack_number)
 
     # # is my turn
     # result = image_test.is_main_player_turn()
@@ -43,8 +47,8 @@ if __name__ == "__main__":
     # image = cv2.imread('bet_image/bet_all.png')
     # image_test = ImageTest(image, config)
     # image_test.show_image()
-    players_info = image_test.get_dealer_button_position()
-    print(players_info)
+    # players_info = image_test.get_dealer_button_position()
+    # print(players_info)
 
     # # find empty seat
     # players_info = image_test.get_empty_seats(players_info)

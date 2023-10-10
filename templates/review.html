@@ -9,13 +9,16 @@
 </head>
 <body>
     <!-- <h2>Filter</h2> -->
+    <div id="usernameDisplay">{{username}}</div>
+    <button id="logoutButton" onclick="logout()">Logout</button>
+
     <div id="filter-container">
         <label for="startDate">Start Date:</label>
         <input type="date" id="startDate" value="2023-09-01">
         <label for="endDate">End Date:</label>
         <input type="date" id="endDate" value="2023-11-01">
-        <label for="positions">Position:</label>
-        <select id="positions" name="positions">
+        <!-- <label for="positions">Position:</label> -->
+        <!-- <select id="positions" name="positions">
             <option value="ALL" selected>ALL</option>
             <option value="CO">CO</option>
             <option value="BTN">BTN</option>
@@ -23,7 +26,7 @@
             <option value="BB">BB</option>
             <option value="UTG">UTG</option>
             <option value="MP">MP</option>
-        </select>
+        </select> -->
         <button onclick="ShowData()">Search</button>
     </div>
     <div id="charts-wrapper">

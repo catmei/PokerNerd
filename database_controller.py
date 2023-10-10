@@ -1,9 +1,9 @@
 import pandas as pd
 import os
 from dotenv import load_dotenv
-from datetime import datetime
-from sqlalchemy import create_engine, distinct, Column, Integer, String, JSON, FLOAT
+from sqlalchemy import create_engine, distinct, Column, Integer, String, JSON, FLOAT, and_, select
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm.exc import NoResultFound
 
 load_dotenv()
 
@@ -41,6 +41,22 @@ class History_Overview(Base):
     pnl = Column(Integer)
 
 
+class User(Base):
+    __tablename__ = 'user'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(45), nullable=False, unique=True)
+    password = Column(String(45), nullable=False)
+
+
+class UserGameMapping(Base):
+    __tablename__ = 'user_game_mapping'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(45), nullable=False)
+    game_id = Column(String(45), nullable=False)
+
+
 class PokerDB:
     def __init__(self):
         # Replace these values with your RDS instance details
@@ -55,7 +71,8 @@ class PokerDB:
 
     def build_connection(self):
         # Create an engine
-        self.engine = create_engine(f"mysql+pymysql://{self.USERNAME}:{self.PASSWORD}@{self.ENDPOINT}:{self.PORT}/{self.DATABASE}")
+        self.engine = create_engine(
+            f"mysql+pymysql://{self.USERNAME}:{self.PASSWORD}@{self.ENDPOINT}:{self.PORT}/{self.DATABASE}")
         # Create a session
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
@@ -78,19 +95,64 @@ class PokerDB:
         return df_history_detail
 
     def fetch_history_detail_by_timestamp(self, start, end):
-        history_detail = self.session.query(History_Detail).filter(History_Detail.game_id >= int(start/1000), History_Detail.game_id <= int(end/1000))
+        history_detail = self.session.query(History_Detail).filter(History_Detail.game_id >= int(start / 1000),
+                                                                   History_Detail.game_id <= int(end / 1000))
         df_history_detail = pd.read_sql(history_detail.statement, self.session.bind)
         return df_history_detail
 
-    def fetch_history_overview_by_timestamp(self, start, end):
-        history_overview = self.session.query(History_Overview).filter(History_Overview.game_id >= int(start/1000), History_Overview.game_id <= int(end/1000))
+    def fetch_history_overview_by_timestamp(self, user, start, end):
+        subquery = self.session.query(UserGameMapping.game_id).filter(UserGameMapping.username == user).subquery()
+
+        history_overview = self.session.query(History_Overview).filter(
+            and_(
+                History_Overview.game_id >= int(start / 1000),
+                History_Overview.game_id <= int(end / 1000),
+                History_Overview.game_id.in_(subquery)
+            )
+        )
         df_history_overview = pd.read_sql(history_overview.statement, self.session.bind)
 
         return df_history_overview
 
+    def save_user_info(self, username, password):
+        user_exists = self.session.query(User).filter_by(username=username).first() is not None
+        if user_exists:
+            print(f"username {username} already exists")
+            return False
+        else:
+            new_user = User(username=username, password=password)
+            self.session.add(new_user)
+            self.session.commit()
+            print('save user info successfully')
+            return True
 
+    def fetch_user_info(self):
+        user_info = self.session.query(User)
+        df_user_info = pd.read_sql(user_info.statement, self.session.bind)
 
-    # def fetch_history_overview_by_timestamp(self, start, end):
+        return df_user_info
+
+    def verify_login(self, username, password):
+        try:
+            user = self.session.query(User).filter_by(username=username).one()
+
+            if user.password == password:
+                print("Verified")
+                return True
+            else:
+                print("Wrong Password")
+                return False
+
+        except NoResultFound:
+            print('Not Registered')
+            return False
+
+    def save_user_game_mapping(self, username, game_id):
+        new_mapping = UserGameMapping(username=username, game_id=game_id)
+        self.session.add(new_mapping)
+        self.session.commit()
+        print('save mapping info successfully')
+        return True
 
 
 if __name__ == '__main__':
@@ -100,20 +162,20 @@ if __name__ == '__main__':
     # ids = poker_db_dao.fetch_game_id()
     # print(ids)
 
-    data = poker_db_dao.fetch_history_by_game_id(game_id=1695973800)
-    print(data)
-
-    new_row = pd.DataFrame({
-        'game_id': data['game_id'].tolist()[-1],
-        'hole_cards': [data['my_cards'].tolist()[-1]],
-        'community_cards': [data['table_cards'].tolist()[-1]],
-        'pnl': 500
-    })
-    import json
-    new_row['hole_cards'] = new_row['hole_cards'].apply(json.dumps)
-    new_row['community_cards'] = new_row['community_cards'].apply(json.dumps)
-
-    print(new_row)
+    # data = poker_db_dao.fetch_history_by_game_id(game_id=1695973800)
+    # print(data)
+    #
+    # new_row = pd.DataFrame({
+    #     'game_id': data['game_id'].tolist()[-1],
+    #     'hole_cards': [data['my_cards'].tolist()[-1]],
+    #     'community_cards': [data['table_cards'].tolist()[-1]],
+    #     'pnl': 500
+    # })
+    # import json
+    # new_row['hole_cards'] = new_row['hole_cards'].apply(json.dumps)
+    # new_row['community_cards'] = new_row['community_cards'].apply(json.dumps)
+    #
+    # print(new_row)
 
     # poker_db_dao.append_df(df=new_row, table_name='history_overview')
 
@@ -125,7 +187,9 @@ if __name__ == '__main__':
     # df_history = poker_db_dao.fetch_history_by_timestamp(start, end)
     # df_history = df_history[['']]
     # print(df_history.columns)
+
+    poker_db_dao.save_user_info(username='new_username', password='new_password')
+    # user_info = poker_db_dao.fetch_user_info()
     poker_db_dao.close_connection()
     #
     # print(df_history)
-
