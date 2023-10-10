@@ -33,12 +33,20 @@ def save_dataframe_2_db(df, table_name):
     poker_db_dao.close_connection()
 
 
-def get_history_overview(df_history_detail):
+def save_mapping_2_db(username, game_id):
+    poker_db_dao = PokerDB()
+    poker_db_dao.build_connection()
+    poker_db_dao.save_user_game_mapping(username, game_id)
+    poker_db_dao.close_connection()
+
+
+def get_history_overview(df_history_detail, pnl, position):
     new_row = pd.DataFrame({
         'game_id': df_history_detail['game_id'].tolist()[-1],
+        'position': position,
         'hole_cards': [df_history_detail['my_cards'].tolist()[-1]],
         'community_cards': [df_history_detail['table_cards'].tolist()[-1]],
-        'pnl': 500
+        'pnl': pnl
     })
     # new_row['hole_cards'] = new_row['hole_cards'].apply(json.dumps)
     # new_row['community_cards'] = new_row['community_cards'].apply(json.dumps)
@@ -56,15 +64,16 @@ class ROUND(Enum):
 class GameRecorder:
     window_name = "Hold"
 
-    def __init__(self, conf_path):
+    def __init__(self, conf_path, username):
+        self.username = username
         self.count = 0
         self.save_screenshot = None
         self.save_2_db = None
         self.mode = None
         self.config = read_config_file(filename=conf_path)
-        self.column_names = ['game_id', 'round', 'player', 'position', 'equity', 'action', 'number', 'pot_before',
-                             'pot_after', 'stack_before', 'stack_after', 'my_cards', 'table_cards']
-        # 'stack_size', 'my_cards', 'table_cards', 'equity']
+        self.column_names = ['game_id', 'round', 'player', 'position', 'action', 'number', 'pot_before',
+                             'pot_after', 'stack_before', 'stack_after', 'my_cards', 'table_cards', 'equity']
+        # 'stack_size', 'equity']
         self.history = pd.DataFrame(columns=self.column_names)
 
         self.new_game_start = 0
@@ -73,7 +82,11 @@ class GameRecorder:
         self.round = None
         self.my_cards = []
         self.start_strategy = 0
+        self.stack_number_start = None
+        self.stack_number_end = None
+        self.strategy = None
 
+        self.last_screen_shot = None
         self.last_players_turn = None
         self.last_table_cards = []
         self.action_record_queue = []
@@ -84,6 +97,8 @@ class GameRecorder:
 
     def recognize_image(self, screenshot):
         recognizer = PokerStarsTableRecognizer(screenshot, self.config)
+        if self.last_screen_shot is not None:
+            recognizer_last = PokerStarsTableRecognizer(self.last_screen_shot, self.config)
         try:
             table_cards = recognizer.detect_table_cards()
             pot = recognizer.find_total_pot()
@@ -97,6 +112,13 @@ class GameRecorder:
 
                 # save last game history
                 if self.game_id:
+                    if self.stack_number_end is None:
+                        self.stack_number_end = recognizer_last.detect_stack_number(mode=1)
+
+                    pnl = int(self.stack_number_end) - int(self.stack_number_start)
+                    print(f'Stack Number End: {self.stack_number_end}')
+                    print(f'WinLoss: {pnl}')
+
                     # pd.set_option('display.max_rows', None)
                     # pd.set_option('display.max_columns', None)
                     # print(self.history)
@@ -104,12 +126,14 @@ class GameRecorder:
                         self.history['my_cards'] = self.history['my_cards'].apply(json.dumps)
                         self.history['table_cards'] = self.history['table_cards'].apply(json.dumps)
 
+                        save_mapping_2_db(username=self.username, game_id=self.game_id)
+
                         df_history_detail = self.history
                         print('saving history details')
                         print(df_history_detail)
                         save_dataframe_2_db(df=df_history_detail, table_name='history_detail')
 
-                        df_history_overview = get_history_overview(df_history_detail)
+                        df_history_overview = get_history_overview(df_history_detail, pnl, self.players_position[1])
                         print('saving history overview')
                         print(df_history_overview)
                         save_dataframe_2_db(df=df_history_overview, table_name='history_overview')
@@ -123,6 +147,8 @@ class GameRecorder:
                 self.round = None
                 self.my_cards = []
                 self.last_players_turn = None
+                self.stack_number_start = None
+                self.stack_number_end = None
 
                 # new game starts
                 print('=' * 50)
@@ -134,7 +160,11 @@ class GameRecorder:
                     os.mkdir(f'test_games_screenshots/my_hand_history/{self.game_id}')
                 self.round = ROUND.PRE_FLOP
 
+                # record stack before
+                self.stack_number_start = recognizer.detect_stack_number(mode=1)
                 print(f'Game ID: {self.game_id}')
+                print(f'Stack Number Start: {self.stack_number_start}')
+
                 print('-' * 50)
                 print(f'Round: {self.round.value}')
                 print(f'Table Cards: {table_cards}')
@@ -238,6 +268,8 @@ class GameRecorder:
                             'equity': f'{int(equity)} %'
                         }
 
+                        self.strategy = data
+                        self.strategy['equity'] = round(equity, 2)
                         print(f'strategy: {data}')
 
                         # if self.mode == 'live':
@@ -277,6 +309,11 @@ class GameRecorder:
                     else:
                         action = recognizer.detect_action(player=player)
                         if action:
+                            if player == 1 and action == 'fold':
+                                self.stack_number_end = recognizer_last.detect_stack_number(mode=1)
+                                # self.stack_number_end = recognizer.detect_stack_number(mode=2)
+                                print(f'Stack Number End: {self.stack_number_end}')
+
                             action_job['action'] = action
                             self.bet_record_queue.append(action_job)
                             # print(f'player_{player} action: {action}')
@@ -311,11 +348,16 @@ class GameRecorder:
                     record['position'] = self.players_position[record['player']]
                     record['stack_before'] = 0
                     record['stack_after'] = 0
+                    record['equity'] = np.nan
+
+                    if self.strategy is not None and player == 1:
+                        record['equity'] = self.strategy['equity']
+                        self.strategy = None
                     new_row = pd.DataFrame(record, index=[0])
                     self.history = pd.concat([self.history, new_row], ignore_index=True)
 
                     del self.bet_record_queue[0]
-
+            self.last_screen_shot = screenshot
         except Exception as Error:
             raise
             # print(Error)

@@ -141,6 +141,7 @@
                     success: function(data, status) {
                         console.log(data.payload);
                         displayUsername(data.payload.username);
+                        displaySignout();
                         $(".auth-buttons").hide();  // Hiding the buttons if response is 'OK'
                         $(".modal").hide();
         
@@ -313,7 +314,7 @@
             </div>
         </div>
 
-        <a href="tutor.html" id="tutorMode">Tutor Mode</a>
+        <a href="tutor_demo.html" id="tutorMode">Tutor Mode</a>
         <a href="review.html" id="reviewMode">Review Mode</a>
     </div>
 

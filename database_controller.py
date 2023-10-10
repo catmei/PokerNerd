@@ -147,6 +147,13 @@ class PokerDB:
             print('Not Registered')
             return False
 
+    def save_user_game_mapping(self, username, game_id):
+        new_mapping = UserGameMapping(username=username, game_id=game_id)
+        self.session.add(new_mapping)
+        self.session.commit()
+        print('save mapping info successfully')
+        return True
+
 
 if __name__ == '__main__':
     poker_db_dao = PokerDB()
