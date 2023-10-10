@@ -2,7 +2,7 @@ from flask import Flask, request, render_template, jsonify, redirect, url_for
 from flask_socketio import SocketIO
 from database_controller import PokerDB
 import random
-import json
+import numpy as np
 import pandas as pd
 import jwt
 import hashlib
@@ -20,6 +20,11 @@ def homepage():
 @app.route('/tutor.html')
 def tutor_page():
     return render_template('tutor.html')
+
+
+@app.route('/tutor_demo.html')
+def tutor_demo_page():
+    return render_template('tutor_demo.html')
 
 
 @app.route('/review.html')
@@ -47,20 +52,24 @@ def detail_page():
     detail = poker_db_dao.fetch_history_by_game_id(game_id)
     poker_db_dao.close_connection()
 
-    detail = detail[['round', 'player', 'position', 'action', 'number', 'pot_before', 'pot_after',
-                     'stack_before', 'stack_after']]
+    detail = detail[['round', 'player', 'position', 'action', 'number', 'pot_before', 'pot_after', 'equity']]
+    detail['number'] = detail['number'].apply(lambda x: str(int(x)) if not np.isnan(x) else x)
+    detail['pot_before'] = detail['pot_before'].apply(lambda x: str(int(x)) if not np.isnan(x) else x)
+    detail['pot_after'] = detail['pot_after'].apply(lambda x: str(int(x)) if not np.isnan(x) else x)
+
+    detail['equity'] = detail['equity'].apply(lambda x: np.nan if x is None else x)
+    detail['equity'] = detail['equity'].apply(lambda x: str(int(x)) if not np.isnan(x) else x)
 
     detail = detail.rename(columns={
         'round': 'Round',
         'player': 'Player',
         'position': 'Position',
         'action': 'Action',
-        'number': 'Number',
+        'number': 'Bet Number',
         'hole_cards': 'Hole Cards',
         'pot_before': 'Pot Before',
         'pot_after': 'Pot After',
-        'stack_before': 'Stack Before',
-        'stack_after': 'Stack After'
+        'equity': 'equity(%)'
     })
     # print(detail)
     table_html = detail.to_html()
@@ -175,12 +184,6 @@ def get_hand_history_overview():
     df_history_overview = poker_db_dao.fetch_history_overview_by_timestamp(user, start, end)
     poker_db_dao.close_connection()
 
-    exist_positions = ['BTN', 'SB', 'BB', 'UTG', 'MP', 'CO']
-    random.seed(1)
-    df_history_overview['position'] = df_history_overview['position'].apply(
-        lambda x: exist_positions[random.randint(0, 5)])
-    df_history_overview['pnl'] = df_history_overview['pnl'].apply(lambda x: x + random.randint(-4000, 5000))
-
     df_history_overview['game_id'] = df_history_overview['game_id'].astype(int)
     df_history_overview['datetime'] = pd.to_datetime(df_history_overview['game_id'], unit='s')
     df_history_overview['datetime'] = df_history_overview['datetime'].dt.tz_localize('UTC')
@@ -208,11 +211,9 @@ def get_hand_history_overview():
         'position': 'Position',
         'hole_cards': 'Hole Cards',
         'community_cards': 'Community Cards',
-        'pnl': 'P&L',
+        'pnl': 'WinLoss',
         'details': 'Details'
     })
-
-    # print(df_history_overview)
 
     table_html = df_history_overview.to_html(escape=False, index=False)
     return table_html
@@ -230,11 +231,9 @@ def get_performance_history():
     poker_db_dao.close_connection()
 
     random.seed(1)
-    df_history_overview['pnl'] = df_history_overview['pnl'].apply(lambda x: x + random.randint(-4000, 5000))
     df_history_overview['all_in_ev'] = df_history_overview['pnl'].apply(lambda x: x - random.randint(0, 1000))
     df_history_overview['pnl'] = df_history_overview['pnl'].cumsum()
     df_history_overview['all_in_ev'] = df_history_overview['all_in_ev'].cumsum()
-    # print(df_history_overview)
 
     performance_json = {
         'pnl': df_history_overview['pnl'].tolist(),
@@ -246,41 +245,44 @@ def get_performance_history():
 @app.route('/hole_cards_performance')
 def get_hole_cards_performance():
     def cards_category(cards):
-        table = {
-            '2': 2,
-            '3': 3,
-            '4': 4,
-            '5': 5,
-            '6': 6,
-            '7': 7,
-            '8': 8,
-            '9': 9,
-            'T': 10,
-            'J': 11,
-            'Q': 12,
-            'K': 13,
-            'A': 14,
-        }
-        num1 = cards[0][0]
-        num1_ = table[num1]
-        num2 = cards[1][0]
-        num2_ = table[num2]
-        suit1 = cards[0][1]
-        suit2 = cards[1][1]
-        if num1_ == num2_:
-            cat = num1 + num2
-            return cat
+        if not cards:
+            return None
         else:
-            if num1_ > num2_:
+            table = {
+                '2': 2,
+                '3': 3,
+                '4': 4,
+                '5': 5,
+                '6': 6,
+                '7': 7,
+                '8': 8,
+                '9': 9,
+                'T': 10,
+                'J': 11,
+                'Q': 12,
+                'K': 13,
+                'A': 14,
+            }
+            num1 = cards[0][0]
+            num1_ = table[num1]
+            num2 = cards[1][0]
+            num2_ = table[num2]
+            suit1 = cards[0][1]
+            suit2 = cards[1][1]
+            if num1_ == num2_:
                 cat = num1 + num2
+                return cat
             else:
-                cat = num2 + num1
+                if num1_ > num2_:
+                    cat = num1 + num2
+                else:
+                    cat = num2 + num1
 
-            if suit1 == suit2:
-                cat += 's'
-            else:
-                cat += 'o'
-            return cat
+                if suit1 == suit2:
+                    cat += 's'
+                else:
+                    cat += 'o'
+                return cat
 
     user = request.args.get('user')
     start = int(request.args.get('start'))
@@ -291,9 +293,9 @@ def get_hole_cards_performance():
     df_history_overview = poker_db_dao.fetch_history_overview_by_timestamp(user, start, end)
     poker_db_dao.close_connection()
 
-    random.seed(1)
-    df_history_overview['pnl'] = df_history_overview['pnl'].apply(lambda x: x + random.randint(-5000, 5000))
     df_history_overview['hole_cards_cat'] = df_history_overview['hole_cards'].apply(lambda x: cards_category(x))
+    df_history_overview = df_history_overview[df_history_overview['hole_cards_cat'].notnull()]
+
     grouped_pnl = df_history_overview.groupby('hole_cards_cat')['pnl'].sum().reset_index()
     pnl_dict = grouped_pnl.set_index('hole_cards_cat')['pnl'].to_dict()
 
@@ -311,15 +313,10 @@ def get_position_performance():
     df_history_overview = poker_db_dao.fetch_history_overview_by_timestamp(user, start, end)
     poker_db_dao.close_connection()
 
-    exist_positions = ['BTN', 'SB', 'BB', 'UTG', 'MP', 'CO']
-    random.seed(1)
-    df_history_overview['position'] = df_history_overview['position'].apply(
-        lambda x: exist_positions[random.randint(0, 5)])
-    df_history_overview['pnl'] = df_history_overview['pnl'].apply(lambda x: x + random.randint(-4500, 5000))
-    # print(df_history_overview)
+    df_history_overview = df_history_overview[df_history_overview['position'].notnull()]
+
     grouped_pnl = df_history_overview.groupby('position')['pnl'].sum().reset_index()
     grouped_pnl = grouped_pnl.sort_values(by='pnl', ascending=False).to_dict('list')
-    # print(grouped_pnl)
     return jsonify(grouped_pnl)
 
 

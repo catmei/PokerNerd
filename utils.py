@@ -112,7 +112,6 @@ def table_part_recognition(img, directory, color_of_img):
     err_dict = {}
     for full_image_name in os.listdir(directory):
         image_name = full_image_name.split('.')[0]
-        # print(directory + full_image_name)
         err = image_comparison(img, directory + full_image_name, color_of_img)
         err_dict[image_name] = err
     table_part = min(err_dict, key=err_dict.get)
