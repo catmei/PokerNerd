@@ -12,6 +12,7 @@ from trigger_update_post import trigger_update_strategy
 import time
 from enum import Enum
 import os
+from multiprocessing import Process
 
 
 def adjust_windows():
@@ -24,6 +25,18 @@ def adjust_windows():
     window_game.moveTo(510, 0)
     window_game.minimize()
     window_game.restore()
+
+
+def save_info_to_db(username, game_id, df_history_detail, df_history_overview):
+    print('saving data to database')
+    save_mapping_2_db(username=username, game_id=game_id)
+    # print('saving user game mapping')
+    save_dataframe_2_db(df=df_history_detail, table_name='history_detail')
+    # print('saving history details')
+    # print(df_history_detail)
+    save_dataframe_2_db(df=df_history_overview, table_name='history_overview')
+    # print('saving history overview')
+    # print(df_history_overview)
 
 
 def save_dataframe_2_db(df, table_name):
@@ -40,16 +53,17 @@ def save_mapping_2_db(username, game_id):
     poker_db_dao.close_connection()
 
 
-def get_history_overview(df_history_detail, pnl, position):
+def get_history_overview(df_history_detail, pnl, position, my_cards, table_cards):
     new_row = pd.DataFrame({
         'game_id': df_history_detail['game_id'].tolist()[-1],
         'position': position,
-        'hole_cards': [df_history_detail['my_cards'].tolist()[-1]],
-        'community_cards': [df_history_detail['table_cards'].tolist()[-1]],
+        'hole_cards': [my_cards],
+        'community_cards': [table_cards],
         'pnl': pnl
     })
-    # new_row['hole_cards'] = new_row['hole_cards'].apply(json.dumps)
-    # new_row['community_cards'] = new_row['community_cards'].apply(json.dumps)
+
+    new_row['hole_cards'] = new_row['hole_cards'].apply(json.dumps)
+    new_row['community_cards'] = new_row['community_cards'].apply(json.dumps)
 
     return new_row
 
@@ -97,6 +111,7 @@ class GameRecorder:
 
     def recognize_image(self, screenshot):
         recognizer = PokerStarsTableRecognizer(screenshot, self.config)
+
         if self.last_screen_shot is not None:
             recognizer_last = PokerStarsTableRecognizer(self.last_screen_shot, self.config)
         try:
@@ -104,7 +119,7 @@ class GameRecorder:
             pot = recognizer.find_total_pot()
 
             # define round
-            if not pot and self.new_game_start == 0:
+            if (not pot or (len(table_cards) == 0 and len(self.last_table_cards) > 0)) and (self.new_game_start == 0):
                 data = {
                     'method': 'clean'
                 }
@@ -114,9 +129,9 @@ class GameRecorder:
                 if self.game_id:
                     if self.stack_number_end is None:
                         self.stack_number_end = recognizer_last.detect_stack_number(mode=1)
+                        print(f'Stack Number End: {self.stack_number_end}')
 
                     pnl = int(self.stack_number_end) - int(self.stack_number_start)
-                    print(f'Stack Number End: {self.stack_number_end}')
                     print(f'WinLoss: {pnl}')
 
                     # pd.set_option('display.max_rows', None)
@@ -126,17 +141,13 @@ class GameRecorder:
                         self.history['my_cards'] = self.history['my_cards'].apply(json.dumps)
                         self.history['table_cards'] = self.history['table_cards'].apply(json.dumps)
 
-                        save_mapping_2_db(username=self.username, game_id=self.game_id)
-
                         df_history_detail = self.history
-                        print('saving history details')
-                        print(df_history_detail)
-                        save_dataframe_2_db(df=df_history_detail, table_name='history_detail')
+                        df_history_overview = get_history_overview(df_history_detail, pnl, self.players_position[1],
+                                                                   self.my_cards, self.last_table_cards)
 
-                        df_history_overview = get_history_overview(df_history_detail, pnl, self.players_position[1])
-                        print('saving history overview')
-                        print(df_history_overview)
-                        save_dataframe_2_db(df=df_history_overview, table_name='history_overview')
+                        p = Process(target=save_info_to_db,
+                                    args=(self.username, self.game_id, df_history_detail, df_history_overview))
+                        p.start()
 
                 # clean last game history
                 self.history = pd.DataFrame(columns=self.column_names)
@@ -146,6 +157,7 @@ class GameRecorder:
                 self.players_position = None
                 self.round = None
                 self.my_cards = []
+                self.last_table_cards = []
                 self.last_players_turn = None
                 self.stack_number_start = None
                 self.stack_number_end = None
@@ -201,7 +213,6 @@ class GameRecorder:
                         'table-cards': table_cards
                     }
                     trigger_update_strategy(data)
-
                 self.last_table_cards = table_cards
 
             # check recording from the pre-flop instead of middle
@@ -224,14 +235,17 @@ class GameRecorder:
 
                     # trigger strategy
                     if len(self.my_cards) > 0 and self.start_strategy == 0:
+                        self.stack_number_end = recognizer.detect_stack_number(mode=1)
                         self.start_strategy = 1
                         hero_cards = self.my_cards
                         table_cards = table_cards
                         deck = remove_cards(hero_cards, table_cards)
-                        equity = 100 * (calc_equity(deck, hero_cards, table_cards)/100) ** 1.5
+                        equity = 100 * (calc_equity(deck, hero_cards, table_cards) / 100) ** 1.5
                         # print(f'Equity: {equity}')
                         if pot is None:
                             optimal_bet_amount = -666
+                            action = None
+                            analysis = None
                         else:
                             pot = int(pot)
                             if equity < 50:
@@ -241,12 +255,12 @@ class GameRecorder:
                                     analysis = 'extremely weak hand'
                                 else:
                                     action = 'bet'
-                                    optimal_bet_amount = pot * 1/6  # pot * equity / (100 - 2 * equity)
+                                    optimal_bet_amount = pot * 1 / 6  # pot * equity / (100 - 2 * equity)
                                     analysis = 'weak hand'
                             else:
                                 action = 'bet'
                                 if 50 <= equity < 65:
-                                    optimal_bet_amount = 1/3 * pot
+                                    optimal_bet_amount = 1 / 3 * pot
                                     analysis = 'strong hand'
                                 else:
                                     optimal_bet_amount = pot
@@ -309,10 +323,13 @@ class GameRecorder:
                     else:
                         action = recognizer.detect_action(player=player)
                         if action:
-                            if player == 1 and action == 'fold':
-                                self.stack_number_end = recognizer_last.detect_stack_number(mode=1)
-                                # self.stack_number_end = recognizer.detect_stack_number(mode=2)
-                                print(f'Stack Number End: {self.stack_number_end}')
+                            if player == 1:
+                                if action == 'fold':
+                                    # self.stack_number_end = recognizer_last.detect_stack_number(mode=1)
+                                    # self.stack_number_end = recognizer.detect_stack_number(mode=2)
+                                    print(f'Stack Number End: {self.stack_number_end}')
+                                else:
+                                    self.stack_number_end = None
 
                             action_job['action'] = action
                             self.bet_record_queue.append(action_job)
@@ -340,7 +357,6 @@ class GameRecorder:
                     bet_job['number'] = number
                     bet_job['pot_after'] = pot
                     record = bet_job
-                    print(record)
 
                     record['game_id'] = self.game_id
                     record['my_cards'] = [self.my_cards]
@@ -353,6 +369,8 @@ class GameRecorder:
                     if self.strategy is not None and player == 1:
                         record['equity'] = self.strategy['equity']
                         self.strategy = None
+
+                    print(record)
                     new_row = pd.DataFrame(record, index=[0])
                     self.history = pd.concat([self.history, new_row], ignore_index=True)
 
@@ -360,7 +378,7 @@ class GameRecorder:
             self.last_screen_shot = screenshot
         except Exception as Error:
             raise
-            # print(Error)
+            print(Error)
 
     def run(self, source, debug=False, save_screenshot=False, save_2_db=False):
         self.save_2_db = save_2_db
