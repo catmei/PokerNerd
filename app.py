@@ -338,6 +338,7 @@ def get_hand_history_overview():
     poker_db_dao.close_connection()
 
     df_history_overview['game_id'] = df_history_overview['game_id'].astype(int)
+    df_history_overview = df_history_overview.sort_values(by='game_id', ascending=True)
     df_history_overview['datetime'] = pd.to_datetime(df_history_overview['game_id'], unit='s')
     df_history_overview['datetime'] = df_history_overview['datetime'].dt.tz_localize('UTC')
     df_history_overview['datetime'] = df_history_overview['datetime'].dt.tz_convert('Asia/Taipei')
@@ -380,6 +381,7 @@ def get_performance_history():
     df_history_overview = poker_db_dao.fetch_history_overview_by_timestamp(user, start, end)
     poker_db_dao.close_connection()
 
+    df_history_overview = df_history_overview.sort_values(by='game_id', ascending=True)
     random.seed(1)
     df_history_overview['all_in_ev'] = df_history_overview['pnl'].apply(lambda x: x - random.randint(0, 1000))
     df_history_overview['pnl'] = df_history_overview['pnl'].cumsum()
