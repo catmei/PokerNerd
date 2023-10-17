@@ -7,6 +7,12 @@ import pandas as pd
 import jwt
 import hashlib
 import time
+import math
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -27,15 +33,48 @@ def tutor_demo_page():
     return render_template('tutor_demo.html')
 
 
+def verify_jwt_token():
+    auth_header = request.headers.get('Authorization')
+
+    if auth_header:
+        token = auth_header.split(" ")[1]  # Extract token from Bearer
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
+            print("Verified token")
+            return {
+                'valid': True,
+                'payload': payload
+            }, 200
+
+        except jwt.ExpiredSignatureError:
+            print("Expired token")
+            return {
+                'valid': False,
+                'error': 'Token has expired'
+            }, 401
+
+        except jwt.InvalidTokenError:
+            print("Invalid token")
+            return {
+                'valid': False,
+                'error': 'Invalid token'
+            }, 401
+    else:
+        # Authorization header is missing, return an error response
+        return {
+            'valid': False,
+            'error': 'Authorization header is missing'
+        }, 400
+
+
 @app.route('/review.html')
 def history_page():
     token = request.cookies.get('jwt')
-    secret_key = 'catvin_secret_key'
 
     if not token:
         return redirect(url_for('homepage'))
     try:
-        payload = jwt.decode(token, secret_key, algorithms=["HS256"])
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
         return redirect(url_for('homepage'))
     except jwt.InvalidTokenError:
@@ -47,12 +86,54 @@ def history_page():
 @app.route('/detail.html')
 def detail_page():
     game_id = request.args.get('game_id')
+    token = request.cookies.get('jwt')
+
+    if not token:
+        return redirect(url_for('homepage'))
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        return redirect(url_for('homepage'))
+    except jwt.InvalidTokenError:
+        return redirect(url_for('homepage'))
+
+    return render_template('detail.html', game_id=game_id)
+
+
+@app.route('/hand_history_details')
+def get_hand_history_details():
+    game_id = request.args.get('game_id')
+
+    msg, status = verify_jwt_token()
+
+    if msg['valid']:
+        username = msg['payload']['username']
+    else:
+        return jsonify(msg), status
+
     poker_db_dao = PokerDB()
     poker_db_dao.build_connection()
-    detail = poker_db_dao.fetch_history_by_game_id(game_id)
+    detail = poker_db_dao.fetch_history_by_game_id(username, game_id)
+    overview = poker_db_dao.fetch_history_overview_by_id(username, game_id)
     poker_db_dao.close_connection()
 
+    my_cards = cards_to_emoji(overview['hole_cards'].tolist()[-1])
+    table_cards = cards_to_emoji(overview['community_cards'].tolist()[-1])
+
     detail = detail[['round', 'player', 'position', 'action', 'number', 'pot_before', 'pot_after', 'equity']]
+
+    def cal_number(x):
+        if not np.isnan(x.pot_before) and not np.isnan(x.pot_after):
+            number = int(x.pot_after) - int(x.pot_before)
+            if number <= 0:
+                return '--'
+            else:
+                return number
+        else:
+            return '--'
+
+    detail['number_2'] = detail.apply(lambda x: cal_number(x), axis=1)
+
     detail['number'] = detail['number'].apply(lambda x: str(int(x)) if not np.isnan(x) else x)
     detail['pot_before'] = detail['pot_before'].apply(lambda x: str(int(x)) if not np.isnan(x) else x)
     detail['pot_after'] = detail['pot_after'].apply(lambda x: str(int(x)) if not np.isnan(x) else x)
@@ -60,24 +141,73 @@ def detail_page():
     detail['equity'] = detail['equity'].apply(lambda x: np.nan if x is None else x)
     detail['equity'] = detail['equity'].apply(lambda x: str(int(x)) if not np.isnan(x) else x)
 
+
+
+    def strategy(x):
+        pot = int(x.pot_before) if isinstance(x.pot_before, str) else x.pot_before
+        equity = int(x.equity) if isinstance(x.equity, str) else x.equity
+        bet_amount = int(x.number) if isinstance(x.number, str) else x.number
+
+        # print(pot)
+        # print(type(pot))
+        # print(equity)
+        # print(type(equity))
+        # print(bet_amount)
+        # print(type(bet_amount))
+        # print('-'*50)
+
+        if not isinstance(equity, int) or not (isinstance(bet_amount, int)):
+            return True
+        else:
+            if equity < 50:
+                if 0 < equity < 20:
+                    return True
+                else:
+                    optimal_bet_amount = pot * 1 / 6  # pot * equity / (100 - 2 * equity)
+            else:
+                if 50 <= equity < 65:
+                    optimal_bet_amount = 1 / 3 * pot
+                else:
+                    optimal_bet_amount = pot
+
+            if bet_amount > optimal_bet_amount:
+                return False
+            else:
+                return True
+
+    detail['diagnose'] = detail.apply(lambda x: strategy(x), axis=1)
+    mistake = (detail['diagnose'] == False).any()
+
     detail = detail.rename(columns={
         'round': 'Round',
         'player': 'Player',
         'position': 'Position',
         'action': 'Action',
-        'number': 'Bet Number',
-        'hole_cards': 'Hole Cards',
+        'number_2': 'Bet Number',
         'pot_before': 'Pot Before',
         'pot_after': 'Pot After',
         'equity': 'equity(%)'
     })
+
+    detail = detail[['Round', 'Player', 'Position', 'Action', 'Bet Number', 'Pot Before', 'Pot After', 'equity(%)', 'diagnose']]
+    detail.fillna('--', inplace=True)
     # print(detail)
+    # print(my_cards)
+    # print(table_cards)
+
     table_html = detail.to_html()
-    return render_template('detail.html', table_html=table_html)
+
+    response = {
+        "table_html": table_html,
+        "my_cards": my_cards,
+        "table_cards": table_cards,
+        "diagnose": bool(mistake)
+    }
+
+    return jsonify(response)
 
 
 def generate_jwt_token(username, password):
-    secret_key = 'catvin_secret_key'
     access_expired = 3600
 
     # Define the payload for the JWT token
@@ -88,30 +218,9 @@ def generate_jwt_token(username, password):
     }
 
     # Generate the JWT token
-    jwt_token = jwt.encode(payload, secret_key, algorithm="HS256")
+    jwt_token = jwt.encode(payload, JWT_SECRET_KEY, algorithm="HS256")
 
     return jwt_token
-
-
-@app.route('/verify_token', methods=['POST'])
-def verify_jwt_token():
-    secret_key = 'catvin_secret_key'
-    auth_header = request.headers.get('Authorization')
-    if auth_header:
-        token = auth_header.split(" ")[1]  # Extract token from Bearer
-        try:
-            payload = jwt.decode(token, secret_key, algorithms=["HS256"])
-            print("Verified token")
-            return jsonify(valid=True, payload=payload), 200
-        except jwt.ExpiredSignatureError:
-            print("Expired token")
-            return jsonify(valid=False, error="Token has expired"), 401
-        except jwt.InvalidTokenError:
-            print("Invalid token")
-            return jsonify(valid=False, error="Invalid token"), 401
-    else:
-        # Authorization header is missing, return an error response
-        return jsonify(valid=False, error="Authorization header is missing"), 400
 
 
 @app.route('/sign_up', methods=['POST'])
@@ -173,11 +282,27 @@ def get_game_ids():
     return jsonify(game_ids)
 
 
+def cards_to_emoji(cards):
+    if len(cards) == 0:
+        return '--'
+    suits_to_emoji = {'s': '♠', 'h': '♥', 'd': '♦', 'c': '♣'}
+    cards_string = ''
+    for card in cards:
+        cards_string += card[:-1] + suits_to_emoji[card[-1]] + ' '
+    return cards_string
+
+
 @app.route('/hand_history_overview')
 def get_hand_history_overview():
-    user = request.args.get('user')
     start = int(request.args.get('start'))
     end = int(request.args.get('end'))
+
+    msg, status = verify_jwt_token()
+
+    if msg['valid']:
+        user = msg['payload']['username']
+    else:
+        return jsonify(msg), status
 
     poker_db_dao = PokerDB()
     poker_db_dao.build_connection()
@@ -189,20 +314,11 @@ def get_hand_history_overview():
     df_history_overview['datetime'] = df_history_overview['datetime'].dt.tz_localize('UTC')
     df_history_overview['datetime'] = df_history_overview['datetime'].dt.tz_convert('Asia/Taipei')
     df_history_overview['datetime'] = df_history_overview['datetime'].dt.strftime('%Y-%m-%d %H:%M:%S')
-    df_history_overview['details'] = df_history_overview['game_id']
-    df_history_overview['details'] = df_history_overview['game_id'].apply(
-        lambda x: f'<a href="detail.html?game_id={x}" target="_blank">Details</a>'
-    )
-
-    def cards_to_emoji(cards):
-        suits_to_emoji = {'s': '♠', 'h': '♥', 'd': '♦', 'c': '♣'}
-        cards_string = ''
-        for card in cards:
-            cards_string += card[:-1] + suits_to_emoji[card[-1]] + ' '
-        return cards_string
-
     df_history_overview['community_cards'] = df_history_overview['community_cards'].apply(cards_to_emoji)
     df_history_overview['hole_cards'] = df_history_overview['hole_cards'].apply(cards_to_emoji)
+    df_history_overview['details'] = df_history_overview['game_id'].apply(
+        lambda x: f'<a href="detail.html?game_id={int(x)}" target="_blank">Details</a>'
+    )
 
     df_history_overview = df_history_overview[
         ['datetime', 'position', 'hole_cards', 'community_cards', 'pnl', 'details']]
@@ -221,9 +337,15 @@ def get_hand_history_overview():
 
 @app.route('/performance_history')
 def get_performance_history():
-    user = request.args.get('user')
     start = int(request.args.get('start'))
     end = int(request.args.get('end'))
+
+    msg, status = verify_jwt_token()
+
+    if msg['valid']:
+        user = msg['payload']['username']
+    else:
+        return jsonify(msg), status
 
     poker_db_dao = PokerDB()
     poker_db_dao.build_connection()
@@ -284,9 +406,15 @@ def get_hole_cards_performance():
                     cat += 'o'
                 return cat
 
-    user = request.args.get('user')
     start = int(request.args.get('start'))
     end = int(request.args.get('end'))
+
+    msg, status = verify_jwt_token()
+
+    if msg['valid']:
+        user = msg['payload']['username']
+    else:
+        return jsonify(msg), status
 
     poker_db_dao = PokerDB()
     poker_db_dao.build_connection()
@@ -304,9 +432,15 @@ def get_hole_cards_performance():
 
 @app.route('/position_performance')
 def get_position_performance():
-    user = request.args.get('user')
     start = int(request.args.get('start'))
     end = int(request.args.get('end'))
+
+    msg, status = verify_jwt_token()
+
+    if msg['valid']:
+        user = msg['payload']['username']
+    else:
+        return jsonify(msg), status
 
     poker_db_dao = PokerDB()
     poker_db_dao.build_connection()

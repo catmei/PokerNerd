@@ -89,8 +89,13 @@ class PokerDB:
         game_ids = [item[0] for item in distinct_game_ids]
         return game_ids
 
-    def fetch_history_by_game_id(self, game_id):
-        history_detail = self.session.query(History_Detail).filter(History_Detail.game_id == game_id)
+    def fetch_history_by_game_id(self, user, game_id):
+        subquery = self.session.query(UserGameMapping.game_id).filter(UserGameMapping.username == user).subquery()
+
+        history_detail = self.session.query(History_Detail).filter(
+            History_Detail.game_id.in_(subquery),
+            History_Detail.game_id == game_id
+        )
         df_history_detail = pd.read_sql(history_detail.statement, self.session.bind)
         return df_history_detail
 
@@ -109,6 +114,17 @@ class PokerDB:
                 History_Overview.game_id <= int(end / 1000),
                 History_Overview.game_id.in_(subquery)
             )
+        )
+        df_history_overview = pd.read_sql(history_overview.statement, self.session.bind)
+
+        return df_history_overview
+
+    def fetch_history_overview_by_id(self, user, game_id):
+        subquery = self.session.query(UserGameMapping.game_id).filter(UserGameMapping.username == user).subquery()
+
+        history_overview = self.session.query(History_Overview).filter(
+                History_Overview.game_id.in_(subquery),
+                History_Overview.game_id == game_id
         )
         df_history_overview = pd.read_sql(history_overview.statement, self.session.bind)
 
@@ -151,7 +167,6 @@ class PokerDB:
         new_mapping = UserGameMapping(username=username, game_id=game_id)
         self.session.add(new_mapping)
         self.session.commit()
-        print('save mapping info successfully')
         return True
 
 

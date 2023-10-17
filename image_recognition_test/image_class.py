@@ -195,6 +195,8 @@ class ImageTest:
 
         bounding_boxes = sort_bboxes(bounding_boxes, method='left-to-right')
 
+        self.show_image(bet_img)
+
         number = ''
         for bbox in bounding_boxes:
             number_img = bet_img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
@@ -225,10 +227,6 @@ class ImageTest:
 
         self.show_image(binary_img, zoom_in=True)
 
-        # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-        # eroded = cv2.erode(binary_img, kernel, iterations=1)
-        # self.show_image(eroded, zoom_in=True)
-
         contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         self.show_image_with_contours(stack_img, contours)
 
@@ -237,11 +235,16 @@ class ImageTest:
         self.show_image_with_boxes(stack_img, bounding_boxes)
 
         bounding_boxes = sort_bboxes(bounding_boxes, method='left-to-right')
-        print(bounding_boxes)
+        # print(bounding_boxes)
+
+        self.show_image(stack_img, zoom_in=True)
 
         number = ''
-        for bbox in bounding_boxes:
+        for index, bbox in enumerate(bounding_boxes):
             number_img = stack_img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+            # save_path = f"{index}.png"
+            # cv2.imwrite(save_path, number_img)
+
             symbol = table_part_recognition(number_img, self.cfg['paths']['stack_numbers'], cv2.IMREAD_GRAYSCALE)
             number += symbol
         return number
@@ -423,11 +426,12 @@ class ImageTest:
         self.show_image(img_with_contours, zoom_in=True)
 
     def show_image_with_boxes(self, img, bounding_boxes):
+        image = img.copy()
         # Draw the bounding boxes on the image
         for bbox in bounding_boxes:
             x0, y0, x1, y1 = bbox
-            cv2.rectangle(img, (x0, y0), (x1, y1), (0, 255, 0), 2)
-        self.show_image(img, zoom_in=True)
+            cv2.rectangle(image, (x0, y0), (x1, y1), (0, 255, 0), 2)
+        self.show_image(image, zoom_in=True)
 
     def show_image(self, img=None, zoom_in=False):
         if img is None:

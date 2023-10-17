@@ -12,11 +12,16 @@ body {
     line-height: 1.6;
 }
 
-h1 {
-    font-size: 36px;
-    margin-bottom: 20px;
+h2 {
     color: #fff; /* White text color for headings */
+    padding-top: 20px;
+    padding-right: 20px;
+    padding-left: 20px;}
+
+p{
     padding: 20px;
+    padding-bottom: 40px;
+    color: #ff4757; /* Lighter text color for paragraphs */
 }
 
 /* Styling for the container */
@@ -30,12 +35,84 @@ h1 {
 }
 
 #table-container{
-    width: 95%;
+    width: 94%;
     height: 400px;
     margin: auto;
     margin-bottom: 20px; 
     overflow-y: auto; /* This property will add a vertical scrollbar */
 
+}
+
+#cards-container{
+    display: flex;
+}
+
+#cards-container p {
+    margin-right: auto; /* This will push the button to the end of the container */
+}
+
+#note {
+    margin-right: auto; /* Adjust the space between the note and the button */
+    color: #ff4757; /* Keeping the color style */
+    /* flex-shrink: 0; Prevent the note from shrinking if there is not enough space */
+}
+
+@keyframes flash {
+    0% { background-color: #555; }
+    50% { background-color: #ff4757; }
+    100% { background-color: #555; }
+}
+
+
+#diagnoseButton {
+    animation: flash 2s infinite; /* Applying the animation */
+    display: inline-block;
+    margin: 20px;
+    padding: 5px 20px;
+    background-color: #555; /* Dark background for button */
+    color: #fff; /* Light text color for button */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer; /* Change cursor to pointer when hovering over the button */
+    transition: background-color 0.3s ease; /* Smooth transition for background color change */
+    position: relative; /* Add this line to make the hint box positioned relative to the button */
+}
+
+#diagnoseButton:hover {
+    animation-play-state: paused; /* Pausing the animation on hover */
+}
+
+#diagnoseButton:hover:before {
+    content: 'Highlight sub-optimal hands, if any exist.';
+    position: absolute;
+    background: #333; /* Background color of the hint box */
+    color: #ff4757; /* Text color of the hint box */
+    padding: 5px; 
+    border-radius: 5px;
+    top: 50%; /* Center it vertically relative to the button */
+    right: 100%; /* Place it to the left of the button */
+    transform: translateY(-50%); /* Center it vertically */
+    margin-right: 10px; /* Add some space between the button and the hint box */
+    font-size: 12px;
+    z-index: 999; /* Ensure the hint box appears above other elements */
+    white-space: nowrap; /* Keep the text in a single line */
+}
+
+#diagnoseButton.clicked {
+    animation: none;
+    background-color: #ff4757;
+}
+
+#diagnoseButton.mistake:hover:before {
+    content: 'Mistakes highlighted.';
+}
+
+#diagnoseButton.no-mistake:hover:before {
+    content: 'No mistakes detected.';
+}
+
+.highlight {
+    background-color: rgba(255, 71, 87, 0.1); /* Change the color as per your requirement */
 }
 
 /* Add the table styling here */
@@ -70,4 +147,11 @@ h1 {
 .dataframe a:hover {
     color: #0ff;
     text-decoration: underline;
+}
+
+
+/* Hide the last column */
+table tr th:last-child,
+table tr td:last-child {
+    display: none;
 }
