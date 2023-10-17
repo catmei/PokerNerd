@@ -207,7 +207,7 @@ class PokerStarsTableRecognizer(PokerTableRecognizer):
         number = ''
         for bbox in bounding_boxes:
             number_img = stack_img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
-            symbol = table_part_recognition(number_img, self.cfg['paths']['pot_numbers'], cv2.IMREAD_GRAYSCALE)
+            symbol = table_part_recognition(number_img, self.cfg['paths']['stack_numbers'], cv2.IMREAD_GRAYSCALE)
             number += symbol
         return number
 

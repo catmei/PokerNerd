@@ -2,14 +2,26 @@ let startTimestamp;
 let endTimestamp;
 let position;
 
-function show_history_overview(user, start, end) {
+function getCookie(name) {
+    var value = "; " + document.cookie;
+    var parts = value.split("; " + name + "=");
+    if (parts.length == 2) return parts.pop().split(";").shift();
+}
+
+function show_history_overview(start, end) {
     $.ajax({
         type: "GET",
-        url: `/hand_history_overview?user=${user}&start=${start}&end=${end}`,
+        url: `/hand_history_overview?start=${start}&end=${end}`,
         dataType: "html",
+        headers: {
+            "Authorization": "Bearer " + getCookie('jwt')
+        },
         success: function(data, status) {
             console.log(data)
             $("#table-container").html(data);
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.error(textStatus, errorThrown);
         }
     });
 }
@@ -215,44 +227,62 @@ function plot_position_performance(raw){
 }
 
 
-function show_performance_history(user, start, end){
+function show_performance_history(start, end){
     $.ajax({
         type: "GET",
-        url: `/performance_history?user=${user}&start=${start}&end=${end}`,
+        url: `/performance_history?start=${start}&end=${end}`,
         dataType: "json",
+        headers: {
+            "Authorization": "Bearer " + getCookie('jwt') // Assuming JWT is stored in a cookie named 'jwt'
+        },
         success: function(data, status) {
             console.log(data)
             plot_performance_chart(data)
             document.querySelector('#history-performance-container p').innerText = '';
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.error(textStatus, errorThrown); // Optional: Add error handling here
         }
     });
 }
 
 
-function show_hole_cards_performance(user, start, end){
+function show_hole_cards_performance(start, end){
     $.ajax({
         type: "GET",
-        url: `/hole_cards_performance?user=${user}&start=${start}&end=${end}`,
+        url: `/hole_cards_performance?start=${start}&end=${end}`,
         dataType: "json",
+        headers: {
+            "Authorization": "Bearer " + getCookie('jwt') // Assuming JWT is stored in a cookie named 'jwt'
+        },
         success: function(data, status) {
             console.log(data)
             plot_hole_cards_performance(data);
             document.querySelector('#hole-cards-performance-container p').innerText = '';
         },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.error(textStatus, errorThrown); // Optional: Add error handling here
+        }
     });
 }
 
 
-function show_position_performance(user, start, end){
+function show_position_performance(start, end){
     $.ajax({
         type: "GET",
-        url: `/position_performance?user=${user}&start=${start}&end=${end}`,
+        url: `/position_performance?start=${start}&end=${end}`,
         dataType: "json",
+        headers: {
+            "Authorization": "Bearer " + getCookie('jwt') // Assuming JWT is stored in a cookie named 'jwt'
+        },
         success: function(data, status) {
             console.log(data)
             plot_position_performance(data);
             document.querySelector('#position-performance-container p').innerText = '';
         },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.error(textStatus, errorThrown); // Optional: Add error handling here
+        }
     });
 }
 
@@ -261,7 +291,7 @@ function ShowData(){
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
     // const position = document.getElementById('positions').value;
-    const username = document.getElementById('usernameDisplay').textContent;
+    // const username = document.getElementById('usernameDisplay').textContent;
         
     // Convert date strings to Date objects and get timestamps
     startTimestamp = new Date(startDate).getTime();
@@ -270,12 +300,12 @@ function ShowData(){
     console.log('Start Date Timestamp:', startTimestamp);
     console.log('End Date Timestamp:', endTimestamp);
     // console.log('Position:', position);
-    console.log('Username:', username);
+    // console.log('Username:', username);
     
-    show_history_overview(username, startTimestamp, endTimestamp);
-    show_performance_history(username, startTimestamp, endTimestamp);
-    show_hole_cards_performance(username, startTimestamp, endTimestamp);
-    show_position_performance(username, startTimestamp, endTimestamp);
+    show_history_overview(startTimestamp, endTimestamp);
+    show_performance_history(startTimestamp, endTimestamp);
+    show_hole_cards_performance(startTimestamp, endTimestamp);
+    show_position_performance(startTimestamp, endTimestamp);
 }
 
 function logout() {

@@ -11,12 +11,12 @@ if __name__ == "__main__":
         config = yaml.safe_load(stream)
 
     # Initialize
-    image = cv2.imread(r"C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\1696920593\391.png")
+    image = cv2.imread(r"C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\1696386364\184.png")
     image_test = ImageTest(image, config)
     image_test.show_image()
 
     # detect my stack
-    stack_number = image_test.detect_stack_number(mode=2)
+    stack_number = image_test.detect_stack_number(mode=1)
     print(stack_number)
 
     # # is my turn
@@ -69,14 +69,12 @@ if __name__ == "__main__":
     # is_empty = image_test.check_is_player_empty(2)
     # print(is_empty)
 
-
     # # find bet by player
     # for i in range(1,7):
     #     player_bet = image_test.find_player_bet(player=i)
     #     print(player_bet)
 
-
-    # # detect total pot cards
+    # detect total pot cards
     # total_pot = image_test.find_total_pot()
     # print(total_pot)
 
