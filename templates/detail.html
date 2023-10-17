@@ -6,6 +6,7 @@
     <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
     <script>
         let mistake
+        let note
 
         function getCookie(name) {
             var value = "; " + document.cookie;
@@ -23,22 +24,28 @@
                 },
                 success: function(data, status) {
                     console.log(data)
-                    mistake = data.diagnose
+                    mistake = data.is_diagnose
+                    note = data.note
                     $("#table-container").html(data.table_html);
                     document.getElementById("cards").innerHTML = `My Cards: &nbsp;&nbsp; ${data.my_cards} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Table Cards: &nbsp;&nbsp; ${data.table_cards}`;
                     document.getElementById("cards").style.color = "#ccc";  // Change to your desired color
+
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     console.error(textStatus, errorThrown);
                 }
             });
         }
+        
 
         function highlightFirstRow() {
             $('#diagnoseButton').addClass('clicked');
+
             if (mistake){
                 $('#diagnoseButton').addClass('mistake');
-                // document.getElementById("note").innerHTML = 'Mistakes detected. Rows highlighted.';
+                // document.getElementById("note").innerHTML = note;
+                $('table tr td:nth-child(10)').show();
+                $('table tr th:nth-child(10)').show();
             }else{
                 $('#diagnoseButton').addClass('no-mistake');
                 // document.getElementById("note").innerHTML = 'No mistakes detected.';
@@ -52,8 +59,8 @@
                 }
             });
         }
-
         show_history_details({{game_id}})
+
     </script>
 </head>
 <body>

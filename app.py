@@ -129,6 +129,8 @@ def get_hand_history_details():
                 return '--'
             else:
                 return number
+        elif not np.isnan(x.pot_after) and np.isnan(x.pot_before):
+            return x.pot_after
         else:
             return '--'
 
@@ -141,12 +143,15 @@ def get_hand_history_details():
     detail['equity'] = detail['equity'].apply(lambda x: np.nan if x is None else x)
     detail['equity'] = detail['equity'].apply(lambda x: str(int(x)) if not np.isnan(x) else x)
 
-
+    note = ''  # Initialize note here
+    index = 0
 
     def strategy(x):
+        nonlocal note
+        nonlocal index
         pot = int(x.pot_before) if isinstance(x.pot_before, str) else x.pot_before
         equity = int(x.equity) if isinstance(x.equity, str) else x.equity
-        bet_amount = int(x.number) if isinstance(x.number, str) else x.number
+        bet_amount = int(x.number_2) if x.number_2 != '--' else x.number_2
 
         # print(pot)
         # print(type(pot))
@@ -156,12 +161,17 @@ def get_hand_history_details():
         # print(type(bet_amount))
         # print('-'*50)
 
+        index += 1
+
+        note = ''  # Reset note for each row
+        diagnosis = True  # Default value
+
         if not isinstance(equity, int) or not (isinstance(bet_amount, int)):
-            return True
+            return diagnosis, note
         else:
             if equity < 50:
                 if 0 < equity < 20:
-                    return True
+                    return diagnosis, note
                 else:
                     optimal_bet_amount = pot * 1 / 6  # pot * equity / (100 - 2 * equity)
             else:
@@ -170,13 +180,23 @@ def get_hand_history_details():
                 else:
                     optimal_bet_amount = pot
 
-            if bet_amount > optimal_bet_amount:
-                return False
-            else:
-                return True
+            if optimal_bet_amount:
+                optimal_bet_amount = int(optimal_bet_amount)
+                if optimal_bet_amount < 100:
+                    optimal_bet_amount = 100
 
-    detail['diagnose'] = detail.apply(lambda x: strategy(x), axis=1)
-    mistake = (detail['diagnose'] == False).any()
+            if bet_amount > optimal_bet_amount:
+                note = f'Bet Number should not exceed {int(optimal_bet_amount)}'
+                diagnosis = False
+
+            return diagnosis, note
+
+    # Apply the strategy function and create a new DataFrame with the results
+    diagnoses_and_notes = pd.DataFrame(detail.apply(lambda x: strategy(x), axis=1).tolist(), columns=['is_diagnose', 'diagnosis'])
+    detail = pd.concat([detail, diagnoses_and_notes], axis=1)
+
+    # detail['diagnose'] = detail.apply(lambda x: strategy(x), axis=1)
+    mistake = (detail['is_diagnose'] == False).any()
 
     detail = detail.rename(columns={
         'round': 'Round',
@@ -189,19 +209,22 @@ def get_hand_history_details():
         'equity': 'equity(%)'
     })
 
-    detail = detail[['Round', 'Player', 'Position', 'Action', 'Bet Number', 'Pot Before', 'Pot After', 'equity(%)', 'diagnose']]
+    detail = detail[['Round', 'Player', 'Position', 'Action', 'Bet Number', 'Pot Before', 'Pot After', 'equity(%)',
+                     'diagnosis', 'is_diagnose']]
     detail.fillna('--', inplace=True)
     # print(detail)
     # print(my_cards)
     # print(table_cards)
 
+    detail.index = detail.index + 1
     table_html = detail.to_html()
 
     response = {
         "table_html": table_html,
         "my_cards": my_cards,
         "table_cards": table_cards,
-        "diagnose": bool(mistake)
+        "is_diagnose": bool(mistake),
+        "note": note
     }
 
     return jsonify(response)
