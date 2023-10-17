@@ -67,6 +67,11 @@ def verify_jwt_token():
         }, 400
 
 
+@app.route('/verify_token', methods=['POST'])
+def verify_jwt_token_web():
+    return verify_jwt_token()
+
+
 @app.route('/review.html')
 def history_page():
     token = request.cookies.get('jwt')
