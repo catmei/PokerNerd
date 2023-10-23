@@ -34,7 +34,8 @@ if __name__ == "__main__":
     # path = r"C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\1695980742\1.png"
     # path = r'C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\__1695975369\122.png'
     # path = r'C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\__1695973889\30.png'
-    path = r"C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\1696059893\419.png"
+    # path = r"C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\1696059893\419.png"
+    path = r"C:\Users\b0220\Documents\data_engineering\PokerNerd\test\images_for_integration_test\my_hand_history\1697982276\427.png"
 
     image = cv2.imread(path)
     image_tool = ImageTools(image)

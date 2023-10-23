@@ -1,0 +1,140 @@
+paths:
+  hero_cards_suits: '../app_tutor_crawler/recognition/images_templates/hero_cards_suits/'
+  hero_cards_numbers: '../app_tutor_crawler/recognition/images_templates/hero_cards_numbers/'
+  table_cards_numbers: '../app_tutor_crawler/recognition/images_templates/table_cards_numbers/'
+  table_cards_suits: '../app_tutor_crawler/recognition/images_templates/table_cards_suits/'
+  pot_numbers: '../app_tutor_crawler/recognition/images_templates/pot_numbers/'
+  pot_image: '../app_tutor_crawler/recognition/images_templates/pot/pot.png'
+  dealer_button: '../app_tutor_crawler/recognition/images_templates/dealer_button/button.png'
+  empty_seat: '../app_tutor_crawler/recognition/images_templates/empty_seat/empty_seat.png'
+  sitting_out: '../app_tutor_crawler/recognition/images_templates/sitting_out/so.png'
+  player_action: '../app_tutor_crawler/recognition/images_templates/player_action/'
+  stack_numbers: '../app_tutor_crawler/recognition/images_templates/stack_numbers/'
+
+table_size:
+  width: 1090
+  height: 900
+
+info_box_size:
+  width: 470
+  height: 500
+
+hero_step_define:
+  x_0: 932
+  y_0: 1007
+  x_1: 1139
+  y_1: 1093
+  lower_gray_color: [0, 5, 50]
+  upper_gray_color: [149, 7, 137]
+  min_white_pixels: 5000
+
+hero_cards:
+  x_0: 875
+  y_0: 885
+  x_1: 1126
+  y_1: 990
+  # x coordinate where the card ends
+  separator_1: 127
+  separator_2: 254
+
+table_cards:
+  x_0: 676
+  y_0: 498
+  x_1: 1319
+  y_1: 676
+  # x coordinate where the card ends
+  separator_1: 127
+  separator_2: 257
+  separator_3: 386
+  separator_4: 514
+  separator_5: 642
+
+pot:
+  # in what area looking for pot
+  x_0: 810
+  y_0: 453
+  x_1: 1184
+  y_1: 497
+  # the maximum width and height over which
+  # the sum of the bet can be placed
+  width: 300
+  height: 40
+  pot_template_width: 55
+  # binary image threshold
+  value_1: 140
+  value_2: 255
+  # boxes min h&w
+  min_height: 15
+  min_width: 1
+
+stack:
+  x_0: 934
+  y_0: 1051
+  x_1: 1140
+  y_1: 1091
+  # binary image threshold
+  value_1: 140
+  value_2: 255
+  # boxes min h&w
+  min_height: 15
+  min_width: 1
+
+player_center_coordinates:
+  # the first player is the hero and then clockwise
+  # coordinates are stored in [x, y] format
+  1: [872, 1050]
+  2: [382,801]
+  3: [443,378]
+  4: [1127,248]
+  5: [1556, 380]
+  6: [1617, 800]
+
+players_coordinates:
+  # coordinates are stored in [x_0, y_0, x_1, y_1] format
+  1: [931, 1002, 1153, 1100]
+  2: [106, 756, 328, 847]
+  3: [175, 328, 387, 429]
+  4: [857, 199, 1072, 297]
+  5: [1608, 329, 1832,425]
+  6: [1674, 752, 1890, 849]
+
+players_btm_contour:
+  # coordinates are stored in [x_0, y_0, x_1, y_1] format
+  1: [910, 1088, 1143, 1120]
+  2: [122, 847, 347, 872]
+  3: [180, 417, 409, 448]
+  4: [865, 287, 1088, 317]
+  5: [1589, 419, 1824,451]
+  6: [1656, 841, 1891, 871]
+
+players_bet:
+  # coordinates are stored in [x_0, y_0, x_1, y_1] format
+  2: [522, 752, 651, 785]
+  3: [545, 462, 675, 498]
+  4: [1092, 331, 1220, 368]
+  5: [1295, 417, 1430, 452]
+  6: [1348, 752, 1479, 788]
+
+players_bet_:
+  # coordinates are stored in [x_0, y_0, x_1, y_1] format
+  1: [913, 830, 1048, 868]
+  2: [522, 752, 651, 785]
+  3: [545, 462, 675, 498]
+  4: [1092, 331, 1220, 368]
+  5: [1295, 417, 1430, 452]
+  6: [1348, 752, 1479, 788]
+
+limit:
+  btm_contour_min_white: 1500
+
+window:
+  tutor:
+    title: 'PokerNerd --Tutor Mode--'
+    move_left: -10
+    move_top: 0
+  game:
+    title: 'No Limit'
+    resize_width: 2000
+    resize_height: 1500
+    move_left: 510
+    move_top: 0

@@ -162,5 +162,6 @@ cython_debug/
 *.xml
 
 # test game history screenshot
-test_games_screenshots/
 image_recognition_test/**/*.png
+my_hand_history/
+observe_history/

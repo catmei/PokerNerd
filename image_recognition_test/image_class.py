@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 import os
-from utils import sort_bboxes, thresholding, card_separator, table_part_recognition, convert_contours_to_bboxes, find_by_template, find_closer_point
+from app_tutor_crawler.recognition.utils import (sort_bboxes, thresholding, card_separator, table_part_recognition,
+                                                 convert_contours_to_bboxes, find_by_template, find_closer_point)
 
 
 class ImageTest:
@@ -204,7 +205,7 @@ class ImageTest:
             number += symbol
         return number
 
-    def detect_stack_number(self, mode):
+    def detect_stack_number(self):
         """
         Returns:
             number(str): number with player 1 stack number
@@ -220,11 +221,7 @@ class ImageTest:
         # bet_img = img[max_loc[1] - 3:max_loc[1] + self.cfg['pot']['height'],
         #               max_loc[0] + self.cfg['pot']['pot_template_width']:
         #               max_loc[0] + self.cfg['pot']['pot_template_width'] + self.cfg['pot']['width']]
-        if mode == 1:
-            binary_img = thresholding(stack_img, self.cfg['stack']['value_1'], self.cfg['stack']['value_2'])
-        elif mode == 2:
-            binary_img = thresholding(stack_img, self.cfg['stack']['value_3'], self.cfg['stack']['value_4'])
-
+        binary_img = thresholding(stack_img, self.cfg['stack']['value_1'], self.cfg['stack']['value_2'])
         self.show_image(binary_img, zoom_in=True)
 
         contours, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

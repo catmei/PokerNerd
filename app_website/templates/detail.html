@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PokerNerd --details--</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="../static/detail.js"></script>
+    <link rel="stylesheet" type="text/css" href="../static/detail.css">
+</head>
+<body>
+    <h2>Hand History</h2>
+    <div id="cards-container">
+        <p id="cards"> Loading Cards Information... </p>
+        <p id="note"></p>
+        <button id="diagnoseButton"  onclick="highlightFirstRow()">Diagnose</button>
+    </div>
+    <div id="table-container">
+        <p>Loading Hand History Details...</p>
+    </div>
+    <script>
+        show_history_details({{ game_id }});
+    </script>
+</body>
+</html>

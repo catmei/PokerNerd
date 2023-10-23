@@ -6,18 +6,18 @@ from image_class import ImageTest
 
 
 if __name__ == "__main__":
-    filename = '../config_test.yaml'
+    filename = '../config.yaml'
     with open(filename, 'r') as stream:
         config = yaml.safe_load(stream)
 
     # Initialize
-    image = cv2.imread(r"C:\Users\b0220\Documents\data_engineering\PokerNerd\test_games_screenshots\my_hand_history\1696386364\184.png")
+    image = cv2.imread(r"C:\Users\b0220\Documents\data_engineering\PokerNerd\test\images_for_test\table_cards\Th_3c_As_7s_Jc'.png")
     image_test = ImageTest(image, config)
     image_test.show_image()
 
     # detect my stack
-    stack_number = image_test.detect_stack_number(mode=1)
-    print(stack_number)
+    # stack_number = image_test.detect_stack_number()
+    # print(stack_number)
 
     # # is my turn
     # result = image_test.is_main_player_turn()
@@ -31,9 +31,9 @@ if __name__ == "__main__":
     # player_turn = image_test.detect_players_turn_()
     # print(player_turn)
 
-    # # detect table cards
-    # table_cards = image_test.detect_table_cards()
-    # print(table_cards)
+    # detect table cards
+    table_cards = image_test.detect_table_cards()
+    print(table_cards)
 
     # detect action
     # action = image_test.detect_action(player=3)

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>PokerNerd --Review Mode--</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script type="text/javascript" src="../static/review.js"></script>
+    <link rel="stylesheet" type="text/css" href="../static/review.css">
+</head>
+<body>
+    <div id="usernameDisplay">{{username}}</div>
+    <button id="logoutButton" onclick="logout()">Logout</button>
+    <div id="filter-container">
+        <label for="startDate">Start Date:</label>
+        <input type="date" id="startDate" value="2023-09-01">
+        <label for="endDate">End Date:</label>
+        <input type="date" id="endDate" value="2023-11-01">
+        <!-- <label for="positions">Position:</label> -->
+        <!-- <select id="positions" name="positions">
+            <option value="ALL" selected>ALL</option>
+            <option value="CO">CO</option>
+            <option value="BTN">BTN</option>
+            <option value="SB">SB</option>
+            <option value="BB">BB</option>
+            <option value="UTG">UTG</option>
+            <option value="MP">MP</option>
+        </select> -->
+        <button onclick="ShowData()">Search</button>
+    </div>
+    <div id="charts-wrapper">
+        <div id="table-container" class="chart-container">
+            <p>Loading Hand History Overview...</p>
+        </div>
+        <div id="history-performance-container" class="chart-container">
+            <p>Loading Performance History...</p>
+        </div>
+        <div id="hole-cards-performance-container" class="chart-container">
+            <p>Loading Hole Cards Performance...</p>
+        </div>
+        <div id="position-performance-container" class="chart-container">
+            <p>Loading Position Performance...</p>
+        </div>
+    </div>
+    <script>
+        ShowData();
+    </script>
+</body>
+</html>

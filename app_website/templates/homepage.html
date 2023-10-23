@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PokerNerd</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="../static/homepage.js"></script>
+    <link rel="stylesheet" type="text/css" href="../static/homepage.css">
+</head>
+<body>
+    <div id="background-image"></div> <!-- Background Image -->
+    <div id="content">  <!-- Content Overlay -->
+        <div id="usernameDisplay"></div>
+        <button id="logoutButton" onclick="logout()">Logout</button>
+
+        <h1 id="main">PokerNerd</h1>
+        <!-- Buttons -->
+        <div class="auth-buttons">
+            <button class="btn" onclick="openModal('signUpModal')">Sign Up</button>
+            <button class="btn" onclick="openModal('signInModal')">Sign In</button>
+        </div>
+
+        <div id="signUpModal" class="modal">
+            <div class="modal-content">
+                <form id="signUpForm">
+                    <input type="text" id="signUpUsername" placeholder="Username" required>
+                    <input type="password" id="signUpPassword" placeholder="Password" required>
+                    <input type="button" value="Sign Up" onclick="submitSignUp()">
+                </form>
+            </div>
+        </div>
+        <div id="signInModal" class="modal">
+            <div class="modal-content">
+                <form id="signInForm">
+                    <input type="text" id="signInUsername" placeholder="Username" required>
+                    <input type="password" id="signInPassword" placeholder="Password" required>
+                    <input type="button" value="Sign In" onclick="submitSignIn()">
+                </form>
+            </div>
+        </div>
+        <a href="tutor_demo.html" id="tutorMode">Tutor Mode</a>
+        <a href="review.html" id="reviewMode">Review Mode</a>
+    </div>
+</body>
+</html>
