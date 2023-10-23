@@ -8,7 +8,7 @@ def test_full_game_recognition():
     USERNAME = os.getenv('POKER_GAME_USERNAME')
     game_recorder = GameRecorder(conf_path='../config.yaml', username=USERNAME)
     df_history = game_recorder.run(
-        source='images_for_integration_test/my_hand_history/1696388635',
+        source='images_for_integration_test/test_game',
         debug=False,
         save_2_db=False
     )
