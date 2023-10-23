@@ -1,9 +1,9 @@
-import pandas as pd
 import os
+import pandas as pd
 from dotenv import load_dotenv
-from sqlalchemy import create_engine, distinct, Column, Integer, String, JSON, FLOAT, and_, select
-from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy import create_engine, distinct, Column, Integer, String, JSON, FLOAT, and_
 
 load_dotenv()
 
@@ -162,42 +162,3 @@ class PokerDB:
         self.session.commit()
         return True
 
-
-if __name__ == '__main__':
-    poker_db_dao = PokerDB()
-    poker_db_dao.build_connection()
-
-    # ids = poker_db_dao.fetch_game_id()
-    # print(ids)
-
-    # data = poker_db_dao.fetch_history_by_game_id(game_id=1695973800)
-    # print(data)
-    #
-    # new_row = pd.DataFrame({
-    #     'game_id': data['game_id'].tolist()[-1],
-    #     'hole_cards': [data['my_cards'].tolist()[-1]],
-    #     'community_cards': [data['table_cards'].tolist()[-1]],
-    #     'pnl': 500
-    # })
-    # import json
-    # new_row['hole_cards'] = new_row['hole_cards'].apply(json.dumps)
-    # new_row['community_cards'] = new_row['community_cards'].apply(json.dumps)
-    #
-    # print(new_row)
-
-    # poker_db_dao.append_df(df=new_row, table_name='history_overview')
-
-    # get history by timestamp
-    # start = 1695859200000
-    # end = 1696118400000
-    # poker_db_dao = PokerDB()
-    # poker_db_dao.build_connection()
-    # df_history = poker_db_dao.fetch_history_by_timestamp(start, end)
-    # df_history = df_history[['']]
-    # print(df_history.columns)
-
-    poker_db_dao.save_user_info(username='new_username', password='new_password')
-    # user_info = poker_db_dao.fetch_user_info()
-    poker_db_dao.close_connection()
-    #
-    # print(df_history)

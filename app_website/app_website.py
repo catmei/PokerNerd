@@ -1,4 +1,7 @@
 import os
+import sys
+parent_directory = os.path.dirname(os.getcwd())
+sys.path.append(parent_directory)
 import jwt
 import time
 import random
@@ -7,9 +10,7 @@ import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from flask import Flask, request, render_template, jsonify, redirect, url_for
-
 from database.database_utils import PokerDB
-
 
 load_dotenv()
 JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
@@ -182,7 +183,8 @@ def get_hand_history_details():
             return diagnosis, note
 
     # Apply the strategy function and create a new DataFrame with the results
-    diagnoses_and_notes = pd.DataFrame(detail.apply(lambda x: strategy(x), axis=1).tolist(), columns=['is_diagnose', 'diagnosis'])
+    diagnoses_and_notes = pd.DataFrame(detail.apply(lambda x: strategy(x), axis=1).tolist(),
+                                       columns=['is_diagnose', 'diagnosis'])
     detail = pd.concat([detail, diagnoses_and_notes], axis=1)
 
     # detail['diagnose'] = detail.apply(lambda x: strategy(x), axis=1)

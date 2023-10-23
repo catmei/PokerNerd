@@ -1,4 +1,7 @@
 import os
+import sys
+parent_directory = os.path.dirname(os.getcwd())
+sys.path.append(parent_directory)
 import cv2
 import time
 import yaml
@@ -11,7 +14,6 @@ import pandas as pd
 
 from enum import Enum
 from threading import Thread
-
 from database.database_utils import PokerDB
 from app_tutor_crawler.strategy.strategy import calc_equity, remove_cards, simple_strategy
 from app_tutor_crawler.recognition.pokerstars_recognition import PokerStarsTableRecognizer
