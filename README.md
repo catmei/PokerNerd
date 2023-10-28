@@ -9,18 +9,12 @@ Tailored for Texas Hold'em  enthusiasts, this tool provides instant strategy ins
 #### [Review Mode](#review-mode): Analyze your hand history for post-game insights
 
 ## Architecture
-![OpenCV Image](https://catvin-bucket-stylish.s3.ap-southeast-2.amazonaws.com/Copy+of+PokerNerd.jpg)
+![Copy of PokerNerd](https://github.com/catmei/PokerNerd/assets/95495466/528b109f-ed45-4e5d-b09a-73e0cba9a06d)
 
 ## Tutor Mode
 
 ### Demo Video
 https://github.com/catmei/PokerNerd/assets/95495466/b3437270-4417-4452-ada3-4a16cce4048b
-
-
-### Supported Platforms and Games
-
-- **Operating System:** Windows 11
-- **Game:** PokerStars (6-person table)
 
 ### Getting Started
 
@@ -51,5 +45,11 @@ Before diving into the Tutor Mode, ensure that you're running the supported oper
 
 ## Review Mode
 1. sign in
+   ![sign_in](https://github.com/catmei/PokerNerd/assets/95495466/85714c29-ec65-4248-af28-1889da1bdd1a)
 2. hand history review / diagnosis
+   ![diagnosis](https://github.com/catmei/PokerNerd/assets/95495466/4df7e7cd-d0e8-482d-abef-8474b2343e0a)
 3. history performance analysis
+   ![history_performance](https://github.com/catmei/PokerNerd/assets/95495466/69950988-80e7-4425-ac3f-998a07041451)
+   ![cards_position_performance](https://github.com/catmei/PokerNerd/assets/95495466/a7a7d656-afe8-4518-b8d8-10e1988b92c9)
+
+
