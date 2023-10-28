@@ -14,6 +14,8 @@ Tailored for Texas Hold'em  enthusiasts, this tool provides instant strategy ins
 ## Tutor Mode
 
 ### Demo Video
+https://github.com/catmei/PokerNerd/assets/95495466/b3437270-4417-4452-ada3-4a16cce4048b
+
 
 ### Supported Platforms and Games
 
