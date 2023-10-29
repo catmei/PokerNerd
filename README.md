@@ -1,8 +1,8 @@
 # PokerNerd
 Tailored for Texas Hold'em  enthusiasts, this tool provides instant strategy instructions for PokerStars and comprehensive post-game hand analysis. Elevate your game with PokerNerd's expertise.
 
-### Website Link: https://pokernerd.app
-### Demo Username: catvin666 / Password: aaaaa
+#### Website Link: https://pokernerd.app
+#### Demo Username: catvin666 / Password: aaaaa
 
 ## Main Features
 #### [Tutor Mode](#tutor-mode): Real-time strategic guidance for PokerStars gameplay
