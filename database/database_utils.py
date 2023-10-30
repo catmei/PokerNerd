@@ -69,96 +69,105 @@ class PokerDB:
         # Create an engine
         self.engine = create_engine(
             f"mysql+pymysql://{self.USERNAME}:{self.PASSWORD}@{self.ENDPOINT}:{self.PORT}/{self.DATABASE}")
-        # Create a session
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        # Create a session class with the engine
+        self.Session = sessionmaker(bind=self.engine)
 
     def append_df(self, df, table_name):
-        df.to_sql(table_name, con=self.engine, if_exists='append', index=False)
-        self.session.commit()
+        with self.Session() as session:
+            df.to_sql(table_name, con=self.engine, if_exists='append', index=False)
+            session.commit()
 
     def fetch_game_id(self):
-        distinct_game_ids = self.session.query(distinct(History_Detail.game_id)).all()
-        game_ids = [item[0] for item in distinct_game_ids]
-        return game_ids
+        with self.Session() as session:
+            distinct_game_ids = session.query(distinct(History_Detail.game_id)).all()
+            game_ids = [item[0] for item in distinct_game_ids]
+            return game_ids
 
     def fetch_history_by_game_id(self, user, game_id):
-        subquery = self.session.query(UserGameMapping.game_id).filter(UserGameMapping.username == user).subquery()
+        with self.Session() as session:
+            subquery = session.query(UserGameMapping.game_id).filter(UserGameMapping.username == user).subquery()
 
-        history_detail = self.session.query(History_Detail).filter(
-            History_Detail.game_id.in_(subquery),
-            History_Detail.game_id == game_id
-        )
-        df_history_detail = pd.read_sql(history_detail.statement, self.session.bind)
-        return df_history_detail
+            history_detail = session.query(History_Detail).filter(
+                History_Detail.game_id.in_(subquery),
+                History_Detail.game_id == game_id
+            )
+            df_history_detail = pd.read_sql(history_detail.statement, session.bind)
+            return df_history_detail
 
     def fetch_history_detail_by_timestamp(self, start, end):
-        history_detail = self.session.query(History_Detail).filter(History_Detail.game_id >= int(start / 1000),
-                                                                   History_Detail.game_id <= int(end / 1000))
-        df_history_detail = pd.read_sql(history_detail.statement, self.session.bind)
-        return df_history_detail
+        with self.Session() as session:
+            history_detail = session.query(History_Detail).filter(History_Detail.game_id >= int(start / 1000),
+                                                                       History_Detail.game_id <= int(end / 1000))
+            df_history_detail = pd.read_sql(history_detail.statement, session.bind)
+            return df_history_detail
 
     def fetch_history_overview_by_timestamp(self, user, start, end):
-        subquery = self.session.query(UserGameMapping.game_id).filter(UserGameMapping.username == user).subquery()
+        with self.Session() as session:
+            subquery = session.query(UserGameMapping.game_id).filter(UserGameMapping.username == user).subquery()
 
-        history_overview = self.session.query(History_Overview).filter(
-            and_(
-                History_Overview.game_id >= int(start / 1000),
-                History_Overview.game_id <= int(end / 1000),
-                History_Overview.game_id.in_(subquery)
+            history_overview = session.query(History_Overview).filter(
+                and_(
+                    History_Overview.game_id >= int(start / 1000),
+                    History_Overview.game_id <= int(end / 1000),
+                    History_Overview.game_id.in_(subquery)
+                )
             )
-        )
-        df_history_overview = pd.read_sql(history_overview.statement, self.session.bind)
+            df_history_overview = pd.read_sql(history_overview.statement, session.bind)
 
-        return df_history_overview
+            return df_history_overview
 
     def fetch_history_overview_by_id(self, user, game_id):
-        subquery = self.session.query(UserGameMapping.game_id).filter(UserGameMapping.username == user).subquery()
+        with self.Session() as session:
+            subquery = session.query(UserGameMapping.game_id).filter(UserGameMapping.username == user).subquery()
 
-        history_overview = self.session.query(History_Overview).filter(
-                History_Overview.game_id.in_(subquery),
-                History_Overview.game_id == game_id
-        )
-        df_history_overview = pd.read_sql(history_overview.statement, self.session.bind)
+            history_overview = session.query(History_Overview).filter(
+                    History_Overview.game_id.in_(subquery),
+                    History_Overview.game_id == game_id
+            )
+            df_history_overview = pd.read_sql(history_overview.statement, session.bind)
 
-        return df_history_overview
+            return df_history_overview
 
     def save_user_info(self, username, password):
-        user_exists = self.session.query(User).filter_by(username=username).first() is not None
-        if user_exists:
-            print(f"username {username} already exists")
-            return False
-        else:
-            new_user = User(username=username, password=password)
-            self.session.add(new_user)
-            self.session.commit()
-            print('save user info successfully')
-            return True
+        with self.Session() as session:
+            user_exists = session.query(User).filter_by(username=username).first() is not None
+            if user_exists:
+                print(f"username {username} already exists")
+                return False
+            else:
+                new_user = User(username=username, password=password)
+                session.add(new_user)
+                session.commit()
+                print('save user info successfully')
+                return True
 
     def fetch_user_info(self):
-        user_info = self.session.query(User)
-        df_user_info = pd.read_sql(user_info.statement, self.session.bind)
+        with self.Session() as session:
+            user_info = session.query(User)
+            df_user_info = pd.read_sql(user_info.statement, session.bind)
 
-        return df_user_info
+            return df_user_info
 
     def verify_login(self, username, password):
-        try:
-            user = self.session.query(User).filter_by(username=username).one()
+        with self.Session() as session:
+            try:
+                user = session.query(User).filter_by(username=username).one()
 
-            if user.password == password:
-                print("Verified")
-                return True
-            else:
-                print("Wrong Password")
+                if user.password == password:
+                    print("Verified")
+                    return True
+                else:
+                    print("Wrong Password")
+                    return False
+
+            except NoResultFound:
+                print('Not Registered')
                 return False
 
-        except NoResultFound:
-            print('Not Registered')
-            return False
-
     def save_user_game_mapping(self, username, game_id):
-        new_mapping = UserGameMapping(username=username, game_id=game_id)
-        self.session.add(new_mapping)
-        self.session.commit()
-        return True
+        with self.Session() as session:
+            new_mapping = UserGameMapping(username=username, game_id=game_id)
+            session.add(new_mapping)
+            session.commit()
+            return True
 
