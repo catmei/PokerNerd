@@ -11,7 +11,7 @@ if __name__ == '__main__':
     # run by the live game
     game_recorder.run(
         source='live',
-        save_screenshot=True,
+        save_screenshot=False,
         save_2_db=True
     )
 
