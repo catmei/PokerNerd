@@ -108,7 +108,7 @@ class PokerDB:
             history_overview = session.query(History_Overview).filter(
                 and_(
                     History_Overview.game_id >= int(start / 1000),
-                    History_Overview.game_id <= int(end / 1000),
+                    History_Overview.game_id <= (int(end / 1000) + 86400),
                     History_Overview.game_id.in_(subquery)
                 )
             )
