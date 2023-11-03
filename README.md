@@ -9,7 +9,7 @@ Tailored for Texas Hold'em  enthusiasts, this tool provides instant strategy ins
 #### [Review Mode](#review-mode): Analyze your hand history for post-game insights
 
 ## Architecture
-![Copy of PokerNerd](https://github.com/catmei/PokerNerd/assets/95495466/528b109f-ed45-4e5d-b09a-73e0cba9a06d)
+![Copy of PokerNerd (1)](https://github.com/catmei/PokerNerd/assets/95495466/ac28ae49-6409-47f2-a393-469a813b3c9d)
 
 ## Tutor Mode
 
